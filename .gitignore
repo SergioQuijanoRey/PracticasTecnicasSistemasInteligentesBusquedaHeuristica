@@ -59,3 +59,11 @@ clients/GVGAI-PythonClient/src/logs/clientLog.txt
 examples/super_secret
 src/META-INF/MANIFEST.MF
 src/rs/META-INF/MANIFEST.MF
+/bin1/
+
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
+/traza_ejecucion.data
