@@ -6,6 +6,8 @@ package quijano_rey_sergio;
  *
  * [1] http://www.gvgai.net/cont.php:
  *  - Pequeño tutorial sobre como crear un agente
+ * [2] http://www.gvgai.net/sampleControllers.php
+ *  - Ejemplos de algunos controladores
  * */
 
 // TODO -- Sergio -- limpiar todo esto porque no se si sobran
@@ -82,8 +84,6 @@ public class Agent extends core.player.AbstractPlayer{
                 System.err.println("Devolvemos accion nula");
                 return Types.ACTIONS.ACTION_NIL;
         }
-
-
     }
 
     /**
@@ -118,7 +118,6 @@ public class Agent extends core.player.AbstractPlayer{
 
 
 
-
     /**
      * Con los datos del entorno, establece en que nivel nos encontramos.
      * Esto se hace viendo si hay no hay gemas en el mapa y viendo si hay o no
@@ -130,7 +129,45 @@ public class Agent extends core.player.AbstractPlayer{
      * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
      * */
     int get_level(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        return 1;
-    }
+        // Posicion del jugador
+        // Lo necesitamos para ver si hay NPCs, porque se pasa como parametro
+        // para devolverlos ordenados ascendentemente por distancia al jugador [2]
+        // Tambien lo necesitamos para ordenadr las gemas por orden ascendente
+        // de distancia al jugador [2]
+        Vector2d player_position = stateObs.getAvatarPosition();
 
+        // Tomamos los enemigos ordenados por la posicion
+        ArrayList<Observation> enemies = StateObservation.getNPCPositions(player_position);
+
+        // Tomamos ahora las posiciones de las gemas
+        ArrayList<Observation> gems = stateObs.getResourcesPositions(player_position);
+
+
+        // Decidimos cual es el nivel con los datos recogidos
+        Boolean enemies_exist =  enemies.length > 0;
+        Boolean gems_exist = gems.length > 0;
+        int level = -1;
+
+        if(gems_exist == false && enemies_exist == false){
+            level = 1;
+        }
+        else if(gems_exist == true && enemies_exist == false){
+            level = 2;
+        }
+        else if(gems_exist == false && enemies_exist == true){
+            // El nivel depende de que haya un enemigo o dos
+            if(enemies.length == 1){
+                level = 3;
+            }else{
+                level = 4;
+            }
+        }
+        else if(gems_exist == true && enemies_exist == true){
+            level = 5;
+        }
+
+        // TODO -- Sergio -- borrar los print
+        System.out.println("El level en el que nos encontramos es: " + level);
+        return level;
+    }
 }
