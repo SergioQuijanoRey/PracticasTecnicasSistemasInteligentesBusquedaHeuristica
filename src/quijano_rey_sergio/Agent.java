@@ -10,16 +10,12 @@ package quijano_rey_sergio;
 
 // TODO -- Sergio -- limpiar todo esto porque no se si sobran
 
-import core.game.Game;
+// Tipos de datos que necesito para interactuar con el entorno GVGAI
 import core.game.StateObservation;
 import core.player.AbstractPlayer;
 import ontology.Types;
 import tools.Direction;
 import tools.ElapsedCpuTimer;
-import tools.Utils;
-
-import java.util.Random;
-import java.util.ArrayList;
 
 
 // Para generar numeros aleatorios
@@ -41,7 +37,9 @@ public class Agent extends core.player.AbstractPlayer{
      *
      * Tiene un segundo de computo
      * */
-    public Agent(StateObservation so, ElapsedCpuTimer elapsedTimer){}
+    public Agent(StateObservation so, ElapsedCpuTimer elapsedTimer){
+        System.out.println("Estamos construyendo la clase");
+    }
 
     /**
      * Metodo que se llama al inicio de cada nivel de un juego
@@ -51,8 +49,10 @@ public class Agent extends core.player.AbstractPlayer{
      * */
     // TODO -- Sergio -- Este codigo esta comentado, borrarlo
     //@Override
-    //public void init(SerializableStateObservation sso, ElapsedCpuTimer elapsedTimer){
-    //}
+    @Override
+    public void init(SerializableStateObservation sso, ElapsedCpuTimer elapsedTimer){
+        System.out.println("Estoy haciendo preprocesados");
+    }
 
 
     /**
@@ -64,8 +64,8 @@ public class Agent extends core.player.AbstractPlayer{
      *
      * De momento estamos eligiendo una eleccion al azar entre las dos que tenemos
      * */
+    @Override
     public Types.ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        System.out.println("Estamos intentando pensar una accion");
 
         //Direction move = Utils.processMovementActionKeys(Game.ki.getMask(), Types.DEFAULT_SINGLE_PLAYER_KEYIDX); //use primary set of keys, idx = 0
         //boolean useOn = Utils.processUseKey(Game.ki.getMask(), Types.DEFAULT_SINGLE_PLAYER_KEYIDX); //use primary set of keys, idx = 0
@@ -79,17 +79,18 @@ public class Agent extends core.player.AbstractPlayer{
 
         // Generamos una accion aleatoria y devolvemos una accion segun eso
         Random rand = new Random();
-        int random_value = rand.nextInt(2);
+        int random_value = rand.nextInt(5);
         Types.ACTIONS action;
 
         if(random_value == 0){
+            action = Types.ACTIONS.ACTION_UP;
+        }else if(random_value == 1){
+            action = Types.ACTIONS.ACTION_RIGHT;
+        }else if(random_value == 2){
             action = Types.ACTIONS.ACTION_DOWN;
         }else{
-            action = Types.ACTIONS.ACTION_RIGHT;
+            action = Types.ACTIONS.ACTION_LEFT;
         }
-
-        System.out.println("Estamos devolviendo una accion");
-
 
         return action;
     }
@@ -102,13 +103,12 @@ public class Agent extends core.player.AbstractPlayer{
      * @param elapsedTimer timer con restriccion hasta llegar a CompetitionParameters.TOTAL_LEARNING_TIME
      * @return el siguiente nivel del juego actual para jugar
      * */
-    //@Override
-    //public int result(SerializableStateObservation sso, ElapsedCpuTimer elapsedTimer){
-    //    Random r = new Random();
-    //    Integer level = r.nextInt(3);
+    @Override
+    public int result(SerializableStateObservation sso, ElapsedCpuTimer elapsedTimer){
+        System.out.println("Estamos viendo que hacer cuando ha acabado la partida");
+        Random r = new Random();
+        Integer level = r.nextInt(3);
 
-    //    return level;
-    //}
-
-
+        return level;
+    }
 }
