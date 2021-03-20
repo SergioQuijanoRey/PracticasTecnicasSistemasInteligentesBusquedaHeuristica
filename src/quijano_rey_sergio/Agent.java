@@ -397,4 +397,109 @@ public class Agent extends core.player.AbstractPlayer{
         // el indice cero
         this.current_objective = gems[0].get(0).position;
     }
+
+    /**
+     * Algoritmo A* para devolver una lista de acciones para llevar al jugador
+     * al objetivo marcado
+     *
+     * @param stateObs estado del mundo
+     * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
+     * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
+     *
+     * Cuando no tenemos un objetivo, se llama al metodo que elige el siguiente
+     * objetivo
+     *
+     *
+     *
+     * TODO -- comprobar los tiempos y parar cuando quede poco tiempo de computo
+     * */
+    ArrayList<Types.ACTIONS> a_star(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        // El plan que vamos a construir
+        ArrayList<Types.ACTIONS> plan = new ArrayList<Types.ACTIONS>();
+
+        // Conjunto de posiciones abiertas
+        // TODO -- Sergio --Hacer que priorityqueue tome como entrada un estado,
+        // todo el camino de acciones que hace que se llegue a ese estado, y una
+        // funcion de ordenacion que tenga en cuenta el coste del camino al estado
+        // (como todas las acciones cuestan lo mismo, la longitud del camino) mas
+        // el valor heuristico del estado. Como todos los nodos cuestan lo mismo,
+        // podemos hacer Pair<StateObservation, int> e ir aumentando el int conforme
+        // profundicemos en el arbol
+        PriorityQueue<StateObservation> open = new PriorityQueue<StateObservation>();
+        // Conjunto de posiciones cerradas
+        Set<StateObservation> closed = new Set<StateObservation>();
+
+        // Si no tenemos objetivo, debemos decidir hacia donde dirigirnos
+        if(this.current_objective == null){
+            this.choose_objective(stateObs, elapsedTimer);
+        }
+
+        // Estado temporal. Operamos con el para saber cuales son las consecuencias
+        // de nuestras acciones al construir un plan
+        // TODO -- Sergio -- No se si el copy hace falta. Si no hace falta, quitarlo
+        // porque puede ser que estemos perdiendo tiempo
+        StateObservation current_state = stateObs.copy();
+
+
+        // TODO -- Sergio -- Quitar esta cota y comprobar los tiempos
+        int max_steps = 70;
+        for(int i = 0; i < max_steps; i++){
+            // La siguiente accion que vamos a añadir
+            Types.ACTIONS action;
+
+            // Posicion del jugador en el estado actual, despues de haber
+            // tomado las acciones que hemos ido construyendo
+            Vector2d player_position = current_state.getAvatarPosition();
+
+            // Comprobamos si hemos alcanzado el objetivo, por lo que paramos de
+            // iterar. Ademas establecemos el objetivo a null para que en las
+            // posteriores llamadas se busque un nuevo objetivo
+            if(player_position.x == this.current_objective.x && player_position.y == this.current_objective.y){
+                this.current_objective = null;
+                break;
+            }
+
+            // Calculamos el vector entre el objetivo y el personaje
+            Vector2d diff_vec = this.current_objective.copy();
+            diff_vec.subtract(player_position);
+
+            // Calculamos la accion segun el vector diferencia
+            double x_diff = diff_vec.x;
+            double y_diff = diff_vec.y;
+
+            // No nos podemos mover en diagonal. Primero me muevo en horizontal,
+            // despues en vertical
+            if(x_diff < 0){
+                action = Types.ACTIONS.ACTION_LEFT;
+
+            }else if(x_diff > 0){
+                action = Types.ACTIONS.ACTION_RIGHT;
+
+            // Hemos terminado de movernos en horizontal, ahora nos movemos en vertical
+            }else{
+                if(y_diff < 0){
+                    action = Types.ACTIONS.ACTION_UP;
+                }else if(y_diff > 0){
+                    action = Types.ACTIONS.ACTION_DOWN;
+
+                // Posicion correcta de X e Y, hemos llegado al objetivo
+                }else{
+                    // Establecemos el objetivo a null para que en la siguiente
+                    // iteracion se calcule un nuevo objetivo
+                    this.current_objective = null;
+                    break;
+                }
+            }
+
+
+            // Añadimos la accion al plan
+            plan.add(action);
+
+            // Miramos como se queda el estado del mundo tras realizar la accion
+            // elegida
+            current_state.advance(action);
+        }
+
+        return plan;
+    }
 }
