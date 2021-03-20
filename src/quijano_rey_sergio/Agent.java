@@ -10,18 +10,22 @@ package quijano_rey_sergio;
  *  - Ejemplos de algunos controladores
  * */
 
-// TODO -- Sergio -- limpiar todo esto porque no se si sobran
-
 // Tipos de datos que necesito para interactuar con el entorno GVGAI
 import core.game.StateObservation;
 import core.player.AbstractPlayer;
-import ontology.Types;
-import tools.Direction;
-import tools.ElapsedCpuTimer;
+import core.game.Observation;
 
+import tools.ElapsedCpuTimer;
+import tools.Vector2d;
+
+import ontology.Types;
 
 // Para generar numeros aleatorios
 import java.util.Random;
+
+// Tipos de datos de java
+import java.util.ArrayList;
+import java.lang.Exception;
 
 /**
  * Codigo del agente inteligente que vamos a desarrollar para resolver el juego
@@ -50,9 +54,16 @@ public class Agent extends core.player.AbstractPlayer{
         // TODO -- Sergio -- borrar estos mensajes por pantalla
         System.out.println("Estamos construyendo la clase");
 
-        // Mirando si hay gemas y enemigos, establecemos el nivel en el que
-        // nos encontramos
-        this.current_level = this.get_level(so, elapsedTimer);
+        try {
+            // Mirando si hay gemas y enemigos, establecemos el nivel en el que
+            // nos encontramos
+            this.current_level = this.get_level(so, elapsedTimer);
+        } catch (Exception ex) {
+            // TODO -- Sergio -- mirar como hacer esto mejor
+            // Cuando hay una excepcion porque no se ha hecho bien el calculo,
+            // empleamos la planificacion mas avanzada que tenemos
+            this.current_level = 5;
+        }
     }
 
     /**
@@ -69,15 +80,16 @@ public class Agent extends core.player.AbstractPlayer{
     public Types.ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         switch(this.current_level){
             case 1:
-                return this.leven1_act(stateObs, elapsedTimer);
+                return this.level1_act(stateObs, elapsedTimer);
             case 2:
             case 3:
             case 4:
-            case 5:
                 // TODO -- Sergio -- no mostrar mensajes por pantalla
                 System.err.println("[Err] Todavia no hemos implementado este nivel");
                 System.err.println("Devolvemos accion nula");
                 return Types.ACTIONS.ACTION_NIL;
+            case 5:
+                return this.level5_act(stateObs, elapsedTimer);
             default:
                 // TODO -- Sergio -- no mostrar mensajes por pantalla
                 System.err.println("[Err] El valor actual de nivel no es valido");
@@ -97,7 +109,7 @@ public class Agent extends core.player.AbstractPlayer{
      *
      *
      * */
-    public Types.ACTIONS leven1_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+    public Types.ACTIONS level1_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         // Generamos una accion aleatoria y devolvemos una accion segun eso
         Random rand = new Random();
         int random_value = rand.nextInt(5);
@@ -116,6 +128,22 @@ public class Agent extends core.player.AbstractPlayer{
         return action;
     }
 
+    /**
+     * Elige una accion segun la situacion en la que estemos en el nivel 5.
+     *
+     * En este caso, hacemos A* para calcular el camino hacia la salida y devolvemos
+     * en cada paso la accion correspondiente
+     *
+     * Los calculos solo se hacen una vez. Cuando el plan ya esta construido (no
+     * es vacio) simplemente devolvemos el siguiente elemento
+     *
+     *
+     * */
+    public Types.ACTIONS level5_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        // TODO -- Sergio -- hay que implementar esto
+        return this.level1_act(stateObs, elapsedTimer);
+    }
+
 
 
     /**
@@ -128,7 +156,7 @@ public class Agent extends core.player.AbstractPlayer{
      * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
      * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
      * */
-    int get_level(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+    int get_level(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) throws Exception{
         // Posicion del jugador
         // Lo necesitamos para ver si hay NPCs, porque se pasa como parametro
         // para devolverlos ordenados ascendentemente por distancia al jugador [2]
@@ -137,11 +165,10 @@ public class Agent extends core.player.AbstractPlayer{
         Vector2d player_position = stateObs.getAvatarPosition();
 
         // Tomamos los enemigos ordenados por la posicion
-        ArrayList<Observation> enemies = StateObservation.getNPCPositions(player_position);
+        ArrayList<Observation>[] enemies = stateObs.getNPCPositions(player_position);
 
         // Tomamos ahora las posiciones de las gemas
-        ArrayList<Observation> gems = stateObs.getResourcesPositions(player_position);
-
+        ArrayList<Observation>[] gems = stateObs.getResourcesPositions(player_position);
 
         // Decidimos cual es el nivel con los datos recogidos
         Boolean enemies_exist =  enemies.length > 0;
@@ -164,6 +191,9 @@ public class Agent extends core.player.AbstractPlayer{
         }
         else if(gems_exist == true && enemies_exist == true){
             level = 5;
+        }else{
+            // Esto no puede pasar porque deja al programa en un estado invalido
+            throw new Exception("El calculo de nivel que ha hecho el agente no es valido");
         }
 
         // TODO -- Sergio -- borrar los print
