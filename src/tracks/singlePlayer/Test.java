@@ -39,7 +39,11 @@ public class Test {
 		// Game and level to play
         // Cambio el nivel para poder elegir nuestro juego
 		int gameIdx = 11;
-		int levelIdx = 5; // level names from 0 to 4 (game_lvlN.txt).
+
+        // En principio solo deberia ir del 0 al 4, pero como hemos añadido mapas
+        // personalizados por los profesores, podemos poner un valor hasta 10
+		int levelIdx = 6;
+
 		String gameName = games[gameIdx][1];
 		String game = games[gameIdx][0];;
 		String level1 = game.replace(gameName, gameName + "_lvl" + levelIdx);
