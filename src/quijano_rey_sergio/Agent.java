@@ -64,6 +64,12 @@ public class Agent extends core.player.AbstractPlayer{
     Vector2d current_objective = null;
 
     /**
+     * Numero de gemas que hay que conseguir en ciertos niveles para escapar por
+     * el portal
+     * */
+    int number_of_gems_to_get = 9;
+
+    /**
      * Constructor del agente.
      * Tiene que recibir esos parametros de entrada porque asi se indica en [1]
      * @param so estado del mundo, dado como una observacion
@@ -251,7 +257,7 @@ public class Agent extends core.player.AbstractPlayer{
     void generate_planning(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         // Si no tenemos objetivo, debemos decidir hacia donde dirigirnos
         if(this.current_objective == null){
-            choose_objective(stateObs, elapsedTimer);
+            this.choose_objective(stateObs, elapsedTimer);
         }
 
         // Seteamos el plan a un arraylist vacio
@@ -265,6 +271,7 @@ public class Agent extends core.player.AbstractPlayer{
 
 
         // Construimos aleatoriamente un plan
+        // TODO -- Sergio -- Quitar esta cota y comprobar los tiempos
         int max_steps = 70;
         for(int i = 0; i < max_steps; i++){
             Types.ACTIONS action;
@@ -284,10 +291,10 @@ public class Agent extends core.player.AbstractPlayer{
             // No nos podemos mover en diagonal. Primero me muevo en horizontal,
             // despues en vertical
             if(x_diff < 0){
-                action = Types.ACTIONS.ACTION_RIGHT;
+                action = Types.ACTIONS.ACTION_LEFT;
 
             }else if(x_diff > 0){
-                action = Types.ACTIONS.ACTION_LEFT;
+                action = Types.ACTIONS.ACTION_RIGHT;
 
             // Hemos terminado de movernos en horizontal, ahora nos movemos en vertical
             }else{
@@ -296,9 +303,12 @@ public class Agent extends core.player.AbstractPlayer{
                 }else if(y_diff > 0){
                     action = Types.ACTIONS.ACTION_DOWN;
 
-                // Posicion correcta de X e Y
+                // Posicion correcta de X e Y, hemos llegado al objetivo
                 }else{
-                    action = Types.ACTIONS.ACTION_NIL;
+                    // Establecemos el objetivo a null para que en la siguiente
+                    // iteracion se calcule un nuevo objetivo
+                    this.current_objective = null;
+                    break;
                 }
             }
 
@@ -324,9 +334,22 @@ public class Agent extends core.player.AbstractPlayer{
         if(this.current_level == 1){
             this.choose_objective_as_closest_portal(stateObs, elapsedTimer);
         }else if(this.current_level == 2){
-            // TODO -- Sergio -- esto no es correcto. Si tengo cero gemas, usar
-            // esto, en caso contrario, ir a la gema mas cercana
-            this.choose_objective_as_closest_portal(stateObs, elapsedTimer);
+
+            // Tenemos todas las gemas, tenemos que ir al portal
+            // Puede ser que tengamos mas de las gemas necesarias porque casualmente
+            // pasemos por encima de una gema de camino a otro objetivo
+            if(this.get_current_gems(stateObs, elapsedTimer) >= this.number_of_gems_to_get){
+                System.out.println("Establecemos como objetivo el portal porque ya tenemos todas las gemas");
+                this.choose_objective_as_closest_portal(stateObs, elapsedTimer);
+
+                // Hacemos return para no llamar a this.choose_objective_as_closest_gem
+                // que es lo que ocurre cuando no se entra en el if, para dejar
+                // el codigo mas limpio
+                return;
+            }
+
+            // No tenemos todas las gemas, tenemos que elegir la siguiente mas cercana
+            this.choose_objective_as_closest_gem(stateObs, elapsedTimer);
         }
 
     }
@@ -351,5 +374,27 @@ public class Agent extends core.player.AbstractPlayer{
         // Se devuelve un array de arraylist, por eso tenemos que usar dos veces
         // el indice cero
         this.current_objective = portals[0].get(0).position;
+    }
+
+    /**
+     * Establece la gema mas cercano al jugador como objetivo actual.
+     *
+     * @param stateObs estado del mundo
+     * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
+     * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
+     * */
+    void choose_objective_as_closest_gem(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        // Posicion del jugador
+        // La tomamos para poder hacer la llamada que nos devuelve las gemas
+        // ordenados por distancia ascendente a la referencia que pasemos
+        Vector2d player_position = stateObs.getAvatarPosition();
+
+        // Tomamos las posiciones de las gemas
+        ArrayList<Observation>[] gems = stateObs.getResourcesPositions(player_position);
+
+        // Establezco la localizacion del portal mas cercano como objetivo
+        // Se devuelve un array de arraylist, por eso tenemos que usar dos veces
+        // el indice cero
+        this.current_objective = gems[0].get(0).position;
     }
 }
