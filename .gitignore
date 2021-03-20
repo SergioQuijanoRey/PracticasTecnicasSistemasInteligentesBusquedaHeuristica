@@ -67,3 +67,10 @@ src/rs/META-INF/MANIFEST.MF
 # Ignore Gradle build output directory
 build
 /traza_ejecucion.data
+/Prácticas TSI/nbproject/private/
+/Prácticas TSI/dist/
+/nbproject/private/
+/dist/
+/Prácticas TSI/
+/manifest.mf
+/nbproject/
