@@ -470,9 +470,22 @@ public class Agent extends core.player.AbstractPlayer{
         GridPosition objective_position = new GridPosition(this.current_objective, stateObs);
         open.add(new AStarNode(start_position, objective_position, new ArrayList<GridPosition>()));
 
+        // Conjunto de posiciones inamovibles. Necesario para calcular los
+        // nodos hijos validos y no repetir constantemente este calculo, pues
+        // las posiciones inamovibles no se modifican
+        ArrayList<Observation>[] inmovables_obs = stateObs.getImmovablePositions();
+        HashSet<GridPosition> inmovable_grid_positions = new HashSet<GridPosition>();
+        for(ArrayList<Observation> row : inmovables_obs){
+            for(Observation obs : row){
+                GridPosition current_inmovable_grid = new GridPosition(obs.position, stateObs);
+                inmovable_grid_positions.add(current_inmovable_grid);
+            }
+        }
 
-        // Procedemos a realizar la busqueda
-        while(open.isEmpty() == false){
+        // TODO -- Sergio -- Borrar este counter
+        int counter = 0;
+        while(open.isEmpty() == false && counter < 5000){
+            counter = counter + 1;
             // Tomo el siguiente elemento de abiertos. Esto es, el elemento mas
             // prometedor segun la heuristica que ya hemos indicado. Esta operacion
             // hace que el nodo salga del conjunto de abiertos
@@ -483,10 +496,13 @@ public class Agent extends core.player.AbstractPlayer{
             closed.add(current.get_position());
 
             // Compruebo si la posicion actual es la posicion objetivo
-            if(current.get_position() == objective_position){
+            if(current.get_position().x == objective_position.x && current.get_position().y == objective_position.y){
+                System.out.println("DEBUG: hemos encontrado el objetivo");
+                System.out.println("Iteraciones consumidas: " + counter);
                 // Hemos encontrado la solucion. Devuelvo el path al nodo actual
                 // juntandole este nodo
                 ArrayList<GridPosition> solution_path = current.get_path_to_position();
+                System.out.println("Tamaño del path encontrado: " + solution_path.size());
                 solution_path.add(current.get_position());
                 return solution_path;
             }
@@ -495,7 +511,7 @@ public class Agent extends core.player.AbstractPlayer{
             // Expando el nodo actual y paso los hijos del nodo al conjunto de abiertos
             // en caso de que la posicion que representa el nodo hijo no haya sido
             // ya explorada
-            ArrayList<AStarNode> childs = current.generate_childs(stateObs);
+            ArrayList<AStarNode> childs = current.generate_childs(stateObs, inmovable_grid_positions);
             for(AStarNode child: childs){
                 boolean child_already_explored = closed.contains(child.get_position());
                 if(child_already_explored == false){
@@ -503,6 +519,8 @@ public class Agent extends core.player.AbstractPlayer{
                 }
             }
         }
+
+        System.out.println("No hemos encontrado el objetivo, counter = " + counter);
 
         // La busqueda ha terminado porque hemos agotado los nodos de la lista de abiertos,
         // no porque hayamos encontrado el objetivo. Ha fracasado la busqueda, asi que

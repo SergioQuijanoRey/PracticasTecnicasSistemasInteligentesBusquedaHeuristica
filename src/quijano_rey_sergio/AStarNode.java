@@ -53,26 +53,15 @@ public class AStarNode implements Comparable<AStarNode>{
      *
      * @param stateObs observacion del estado del mundo. Es necesaria para saber
      * si una determianda posicion es o no valida
+     * @param inmovable_grid_positions las posiciones a las que no nos podemos
+     * desplazar. Pasandolo como parametro hace que no repitamos constantemnte
+     * el calculo de estas posiciones
      * */
-    public ArrayList<AStarNode> generate_childs(StateObservation stateObs){
+    public ArrayList<AStarNode> generate_childs(StateObservation stateObs, HashSet<GridPosition> inmovable_grid_positions){
         // Todos los hijos tienen como path el path del padre mas en nodo padre
         ArrayList<GridPosition> new_path = this.path_to_position;
         new_path.add(this.position);
 
-        // Tomo los elementos del mapa que son inmovibles
-        // Los convierto a un set de GridPosition para que sea mas rapido hacer
-        // las comparaciones posteriores
-        // TODO -- Sergio -- Pasar como parametro inmovable_grid_positions para
-        // no repetir calculos en cada llamada de generate_childs
-        // TODO -- Sergio -- Por que devolver array list y [] ?? Matrix ??
-        ArrayList<Observation>[] inmovables_obs = stateObs.getImmovablePositions();
-        HashSet<GridPosition> inmovable_grid_positions = new HashSet<GridPosition>();
-        for(ArrayList<Observation> row : inmovables_obs){
-            for(Observation obs : row){
-                GridPosition current_inmovable_grid = new GridPosition(obs.position, stateObs);
-                inmovable_grid_positions.add(current_inmovable_grid);
-            }
-        }
 
         // Genero todos los hijos posibles, y me quedo con los que sean validos
         ArrayList<AStarNode> valid_childs = new ArrayList<AStarNode>();
@@ -148,7 +137,7 @@ public class AStarNode implements Comparable<AStarNode>{
     }
 
     public ArrayList<GridPosition> get_path_to_position(){
-        return this.get_path_to_position();
+        return this.path_to_position;
     }
 
 
