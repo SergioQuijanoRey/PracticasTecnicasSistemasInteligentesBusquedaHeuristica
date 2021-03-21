@@ -27,6 +27,12 @@ import java.util.Random;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.lang.Exception;
+import java.util.PriorityQueue;
+import java.util.Set;
+
+// Tipos de datos auxiliares que he programado
+import quijano_rey_sergio.GridPosition;
+import quijano_rey_sergio.AStarNode;
 
 /**
  * Codigo del agente inteligente que vamos a desarrollar para resolver el juego
@@ -399,107 +405,99 @@ public class Agent extends core.player.AbstractPlayer{
     }
 
     /**
-     * Algoritmo A* para devolver una lista de acciones para llevar al jugador
-     * al objetivo marcado
+     * Algoritmo A* para devolver una lista de posiciones para llevar al jugador
+     * al objetivo marcado.
      *
      * @param stateObs estado del mundo
      * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
      * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
+     * @return la lista ordenada de posiciones en el grid que representan el camino
+     *
+     * Se devuelven posiciones. Por tanto, el metodo que llame a este metodo es
+     * responsable de convertir las posiciones en acciones
      *
      * Cuando no tenemos un objetivo, se llama al metodo que elige el siguiente
      * objetivo
      *
-     *
-     *
      * TODO -- comprobar los tiempos y parar cuando quede poco tiempo de computo
      * */
-    ArrayList<Types.ACTIONS> a_star(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        // El plan que vamos a construir
-        ArrayList<Types.ACTIONS> plan = new ArrayList<Types.ACTIONS>();
+    ArrayList<GridPosition> a_star(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        // TODO -- Sergio -- Anotaciones sobre el codigo
+        // - Quiero hacer a_star sobre posiciones, no sobre estados, porque los estados
+        // consumen mucha mas memoria
+        // - Terminamos cuando un nodo que sacamos de abiertos es el objetivo
+        // [ ] Necesito un mecanismo para pasar de posiciones a acciones. Puedo tomar
+        // el estado actual stateObs para saber donde esta el muñeco, la posicion
+        // a la que quiero ir, y con eso saber hacia donde necesito moverme
+        // [ ] Trabajar con posiciones en pixeles porque asi va a ser mas facil
+        // [ ] Abiertos: PriorityQueue que almacene una posicion y todo el camino que me ha
+        // llevado hasta esa posicion. El PriorityQueue se ordena por la funcion
+        // coste acumulado (1 por cada paso del camino) y la distancia manhattan
+        // al objetivo
 
-        // Conjunto de posiciones abiertas
-        // TODO -- Sergio --Hacer que priorityqueue tome como entrada un estado,
-        // todo el camino de acciones que hace que se llegue a ese estado, y una
-        // funcion de ordenacion que tenga en cuenta el coste del camino al estado
-        // (como todas las acciones cuestan lo mismo, la longitud del camino) mas
-        // el valor heuristico del estado. Como todos los nodos cuestan lo mismo,
-        // podemos hacer Pair<StateObservation, int> e ir aumentando el int conforme
-        // profundicemos en el arbol
-        PriorityQueue<StateObservation> open = new PriorityQueue<StateObservation>();
-        // Conjunto de posiciones cerradas
-        Set<StateObservation> closed = new Set<StateObservation>();
-
-        // Si no tenemos objetivo, debemos decidir hacia donde dirigirnos
+        // No tenemos objetivo, por lo que tenemos que decidir a donde nos queremos
+        // dirigir
         if(this.current_objective == null){
             this.choose_objective(stateObs, elapsedTimer);
         }
 
-        // Estado temporal. Operamos con el para saber cuales son las consecuencias
-        // de nuestras acciones al construir un plan
-        // TODO -- Sergio -- No se si el copy hace falta. Si no hace falta, quitarlo
-        // porque puede ser que estemos perdiendo tiempo
-        StateObservation current_state = stateObs.copy();
+        // Conjunto de posiciones abiertas
+        // Es un conjunto ordenado segun la suma de coste acumulado de la posicion
+        // y la distancia manhattan al objetivo
+        PriorityQueue<AStarNode> open = new PriorityQueue<AStarNode>();
+
+        // Conjunto de posiciones cerradas
+        // Le heuristica que vamos a usar es admisible. Esto, junto a que todas
+        // las acciones tienen el mismo coste (no hay tipos de suelo que modifiquen
+        // los costes), hace que no tengamos que modificar el conjunto de cerrados
+        // TODO -- Sergio -- Asegurarme de que esto que estoy diciendo es correcto
+        Set<GridPosition> closed = new Set<GridPosition>();
 
 
-        // TODO -- Sergio -- Quitar esta cota y comprobar los tiempos
-        int max_steps = 70;
-        for(int i = 0; i < max_steps; i++){
-            // La siguiente accion que vamos a añadir
-            Types.ACTIONS action;
+        // Para arrancar, el nodo asociado a la posicion inicial (la posicion del jugador)
+        // es añadido al conjunto de abiertos
+        GridPosition start_position = new GridPosition(stateObs.getAvatarPosition(), stateObs);
+        GridPosition objective_position = new GridPosition(this.current_objective, stateObs);
+        open.add(new AStarNode(start_position, objective_position, new ArrayList<GridPosition>()));
 
-            // Posicion del jugador en el estado actual, despues de haber
-            // tomado las acciones que hemos ido construyendo
-            Vector2d player_position = current_state.getAvatarPosition();
 
-            // Comprobamos si hemos alcanzado el objetivo, por lo que paramos de
-            // iterar. Ademas establecemos el objetivo a null para que en las
-            // posteriores llamadas se busque un nuevo objetivo
-            if(player_position.x == this.current_objective.x && player_position.y == this.current_objective.y){
-                this.current_objective = null;
-                break;
+        // Procedemos a realizar la busqueda
+        while(open.isEmpty() == false){
+            // Tomo el siguiente elemento de abiertos. Esto es, el elemento mas
+            // prometedor segun la heuristica que ya hemos indicado. Esta operacion
+            // hace que el nodo salga del conjunto de abiertos
+            AStarNode current = open.poll();
+
+            // El elemento pasa de abiertos a cerrados. Como trabajamos con posiciones
+            // solo metemos la posicion, no toda la estructura de nodo
+            closed.add(current.get_position());
+
+            // Compruebo si la posicion actual es la posicion objetivo
+            if(current.get_position() == objective_position){
+                // Hemos encontrado la solucion. Devuelvo el path al nodo actual
+                // juntandole este nodo
+                ArrayList<GridPosition> solution_path = current.get_path_to_position();
+                solution_path.add(current.get_position());
+                return solution_path;
             }
 
-            // Calculamos el vector entre el objetivo y el personaje
-            Vector2d diff_vec = this.current_objective.copy();
-            diff_vec.subtract(player_position);
 
-            // Calculamos la accion segun el vector diferencia
-            double x_diff = diff_vec.x;
-            double y_diff = diff_vec.y;
-
-            // No nos podemos mover en diagonal. Primero me muevo en horizontal,
-            // despues en vertical
-            if(x_diff < 0){
-                action = Types.ACTIONS.ACTION_LEFT;
-
-            }else if(x_diff > 0){
-                action = Types.ACTIONS.ACTION_RIGHT;
-
-            // Hemos terminado de movernos en horizontal, ahora nos movemos en vertical
-            }else{
-                if(y_diff < 0){
-                    action = Types.ACTIONS.ACTION_UP;
-                }else if(y_diff > 0){
-                    action = Types.ACTIONS.ACTION_DOWN;
-
-                // Posicion correcta de X e Y, hemos llegado al objetivo
-                }else{
-                    // Establecemos el objetivo a null para que en la siguiente
-                    // iteracion se calcule un nuevo objetivo
-                    this.current_objective = null;
-                    break;
+            // Expando el nodo actual y paso los hijos del nodo al conjunto de abiertos
+            // en caso de que la posicion que representa el nodo hijo no haya sido
+            // ya explorada
+            ArrayList<AStarNode> childs = current.generate_childs(stateObs);
+            for(AStarNode child: childs){
+                boolean child_already_explored = closed.contains(child.get_position());
+                if(child_already_explored == false){
+                    open.add(child);
                 }
             }
-
-
-            // Añadimos la accion al plan
-            plan.add(action);
-
-            // Miramos como se queda el estado del mundo tras realizar la accion
-            // elegida
-            current_state.advance(action);
         }
 
-        return plan;
+        // La busqueda ha terminado porque hemos agotado los nodos de la lista de abiertos,
+        // no porque hayamos encontrado el objetivo. Ha fracasado la busqueda, asi que
+        // devolvemos un ArrayList vacio para representar este hecho
+        return new ArrayList<GridPosition>();
+
     }
 }
