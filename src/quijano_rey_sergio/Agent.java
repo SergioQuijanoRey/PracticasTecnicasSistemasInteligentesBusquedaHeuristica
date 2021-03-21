@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.lang.Exception;
 import java.util.PriorityQueue;
-import java.util.Set;
+import java.util.HashSet;
 
 // Tipos de datos auxiliares que he programado
 import quijano_rey_sergio.GridPosition;
@@ -261,6 +261,10 @@ public class Agent extends core.player.AbstractPlayer{
      * quedando sin tiempo, parar la busqueda este la cosa como este
      * */
     void generate_planning(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        // TODO -- Sergio -- Borrar estos mensajes por pantalla
+        System.out.println("Mostrando resultado de A*");
+        System.out.println(this.a_star(stateObs, elapsedTimer));
+
         // Si no tenemos objetivo, debemos decidir hacia donde dirigirnos
         if(this.current_objective == null){
             this.choose_objective(stateObs, elapsedTimer);
@@ -451,7 +455,7 @@ public class Agent extends core.player.AbstractPlayer{
         // las acciones tienen el mismo coste (no hay tipos de suelo que modifiquen
         // los costes), hace que no tengamos que modificar el conjunto de cerrados
         // TODO -- Sergio -- Asegurarme de que esto que estoy diciendo es correcto
-        Set<GridPosition> closed = new Set<GridPosition>();
+        HashSet<GridPosition> closed = new HashSet<GridPosition>();
 
 
         // Para arrancar, el nodo asociado a la posicion inicial (la posicion del jugador)

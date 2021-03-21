@@ -48,8 +48,8 @@ public class GridPosition{
         );
 
         // Usamos el vector de escala para realizar la conversion
-        this.x = Math.floor(position.x / vector_escala.x);
-        this.y = Math.floor(position.y / vector_escala.y);
+        this.x = (int) Math.floor(position.x / vector_escala.x);
+        this.y = (int) Math.floor(position.y / vector_escala.y);
     }
 
     /**

@@ -2,7 +2,11 @@ package quijano_rey_sergio;
 
 // Tipos de datos de Java
 import java.util.ArrayList;
-import java.util.Set;
+import java.util.HashSet;
+
+// Tipos de datos de GVGAI
+import core.game.StateObservation;
+import core.game.Observation;
 
 // Mis tipos de datos auxiliares
 import quijano_rey_sergio.GridPosition;
@@ -37,7 +41,7 @@ public class AStarNode{
     AStarNode(GridPosition position, GridPosition objective, ArrayList<GridPosition> path_to_position){
         this.position = position;
         this.objective = objective;
-        this.path_to_position = path_to_position:
+        this.path_to_position = path_to_position;
     }
 
     /**
@@ -62,7 +66,7 @@ public class AStarNode{
         // no repetir calculos en cada llamada de generate_childs
         // TODO -- Sergio -- Por que devolver array list y [] ?? Matrix ??
         ArrayList<Observation>[] inmovables_obs = stateObs.getImmovablePositions();
-        Set<GridPosition> inmovable_grid_positions = new Set<GridPosition>();
+        HashSet<GridPosition> inmovable_grid_positions = new HashSet<GridPosition>();
         for(ArrayList<Observation> row : inmovables_obs){
             for(Observation obs : row){
                 GridPosition current_inmovable_grid = new GridPosition(obs.position, stateObs);
@@ -72,8 +76,10 @@ public class AStarNode{
 
         // Genero todos los hijos posibles, y me quedo con los que sean validos
         ArrayList<AStarNode> valid_childs = new ArrayList<AStarNode>();
-        for(Integer x_delta: ArrayList<Integer>(-1, 1)){
-            for(Integer y_delta: ArrayList<Integer>(-1, 1)){
+        int[] x_deltas = {-1, 1};
+        int[] y_deltas = {-1, 1};
+        for(int x_delta: x_deltas){
+            for(int y_delta: y_deltas){
 
                 // Posicion resultante de aplicar los deltas
                 int new_x = this.position.x + x_delta;
@@ -100,7 +106,16 @@ public class AStarNode{
         return valid_childs;
     }
 
-    // Getters
+    /**
+     * Calcula el valor heuristico del nodo.
+     * Esto es, valor acumulado del camino al nodo actual mas la distancia Manhattan
+     * al objetivo
+     * */
+    int heuristic_value(){
+        return this.path_to_position.size() + GridPosition.manhattan_distance(this.position, this.objective);
+    }
+
+    // Getters basicos
     //==========================================================================
     public GridPosition get_position(){
         return this.position;
