@@ -33,6 +33,7 @@ import java.util.HashSet;
 // Tipos de datos auxiliares que he programado
 import quijano_rey_sergio.GridPosition;
 import quijano_rey_sergio.AStarNode;
+import quijano_rey_sergio.AStarNodeComparator;
 
 /**
  * Codigo del agente inteligente que vamos a desarrollar para resolver el juego
@@ -448,6 +449,11 @@ public class Agent extends core.player.AbstractPlayer{
         // Conjunto de posiciones abiertas
         // Es un conjunto ordenado segun la suma de coste acumulado de la posicion
         // y la distancia manhattan al objetivo
+        // Cuando especificamos un comparador customizado, hay que especificar
+        // tambien la capacidad del PriorityQueue
+        // TODO -- Sergio -- calcular el tamaño del mundo en gridpositions y
+        // tomar una capacidad en base a ello
+        int initial_capacity = 100;
         PriorityQueue<AStarNode> open = new PriorityQueue<AStarNode>();
 
         // Conjunto de posiciones cerradas

@@ -17,7 +17,7 @@ import quijano_rey_sergio.GridPosition;
  * lleva desde la posicion inicial hasta esta posicion
  * @author Sergio Quijano Rey
  * */
-public class AStarNode{
+public class AStarNode implements Comparable<AStarNode>{
     /**
      * Posicion del mapa que representa este nodo
      * */
@@ -113,6 +113,28 @@ public class AStarNode{
      * */
     int heuristic_value(){
         return this.path_to_position.size() + GridPosition.manhattan_distance(this.position, this.objective);
+    }
+
+    /**
+     * Compara dos nodos.
+     * Lo hacemos para que se induzca una ordenacion ascendente por el valor
+     * heuristico (primero el de menor valor)
+     */
+    @Override
+    public int compareTo(AStarNode other){
+        int heuristic_first = this.heuristic_value();
+        int heuristic_second = other.heuristic_value();
+
+        if(heuristic_first > heuristic_second){
+            return 1;
+        }
+
+        if(heuristic_first < heuristic_second){
+            return -1;
+        }
+
+        // Ambos tienen mismo valor heuristico
+        return 0;
     }
 
     // Getters basicos
