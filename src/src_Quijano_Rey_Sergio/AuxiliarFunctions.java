@@ -1,4 +1,4 @@
-package quijano_rey_sergio;
+package src_Quijano_Rey_Sergio;
 
 import core.game.StateObservation;
 import tools.Vector2d;

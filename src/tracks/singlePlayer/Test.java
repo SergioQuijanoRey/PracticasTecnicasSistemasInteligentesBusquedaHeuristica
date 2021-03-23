@@ -26,7 +26,7 @@ public class Test {
 		String sampleOLETSController = "tracks.singlePlayer.advanced.olets.Agent";
 
         // Añado el path a mi agente
-        String TSIController = "quijano_rey_sergio.Agent";
+        String TSIController = "src_Quijano_Rey_Sergio.Agent";
 
 		//Load available games
 		String spGamesCollection =  "examples/all_games_sp.csv";
@@ -42,7 +42,7 @@ public class Test {
 
         // En principio solo deberia ir del 0 al 4, pero como hemos añadido mapas
         // personalizados por los profesores, podemos poner un valor hasta 10
-		int levelIdx = 6;
+		int levelIdx = 5;
 
 		String gameName = games[gameIdx][1];
 		String game = games[gameIdx][0];;

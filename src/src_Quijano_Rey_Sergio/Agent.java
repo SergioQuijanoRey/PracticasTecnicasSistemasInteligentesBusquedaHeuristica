@@ -1,5 +1,5 @@
 // El paquete que se nos pide que usemos
-package quijano_rey_sergio;
+package src_Quijano_Rey_Sergio;
 
 /**
  * Referencias usadas para el desarrollo de la practica:
@@ -31,9 +31,8 @@ import java.util.PriorityQueue;
 import java.util.HashSet;
 
 // Tipos de datos auxiliares que he programado
-import quijano_rey_sergio.GridPosition;
-import quijano_rey_sergio.AStarNode;
-import quijano_rey_sergio.AStarNodeComparator;
+import src_Quijano_Rey_Sergio.GridPosition;
+import src_Quijano_Rey_Sergio.AStarNode;
 
 /**
  * Codigo del agente inteligente que vamos a desarrollar para resolver el juego
@@ -264,7 +263,7 @@ public class Agent extends core.player.AbstractPlayer{
     void generate_planning(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         // TODO -- Sergio -- Borrar estos mensajes por pantalla
         System.out.println("Mostrando resultado de A*");
-        System.out.println(this.a_star(stateObs, elapsedTimer));
+        //System.out.println(this.a_star(stateObs, elapsedTimer));
 
         // Si no tenemos objetivo, debemos decidir hacia donde dirigirnos
         if(this.current_objective == null){
@@ -344,7 +343,7 @@ public class Agent extends core.player.AbstractPlayer{
     void choose_objective(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         if(this.current_level == 1){
             this.choose_objective_as_closest_portal(stateObs, elapsedTimer);
-        }else if(this.current_level == 2){
+        }else if(this.current_level >= 2){
 
             // Tenemos todas las gemas, tenemos que ir al portal
             // Puede ser que tengamos mas de las gemas necesarias porque casualmente
@@ -362,7 +361,6 @@ public class Agent extends core.player.AbstractPlayer{
             // No tenemos todas las gemas, tenemos que elegir la siguiente mas cercana
             this.choose_objective_as_closest_gem(stateObs, elapsedTimer);
         }
-
     }
 
     /**

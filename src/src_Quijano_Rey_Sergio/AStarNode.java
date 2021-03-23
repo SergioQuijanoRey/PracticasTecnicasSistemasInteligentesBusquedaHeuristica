@@ -1,4 +1,4 @@
-package quijano_rey_sergio;
+package src_Quijano_Rey_Sergio;
 
 // Tipos de datos de Java
 import java.util.ArrayList;
@@ -9,7 +9,7 @@ import core.game.StateObservation;
 import core.game.Observation;
 
 // Mis tipos de datos auxiliares
-import quijano_rey_sergio.GridPosition;
+import src_Quijano_Rey_Sergio.GridPosition;
 
 /**
  * Clase que representa un nodo para la busqueda en A*.
