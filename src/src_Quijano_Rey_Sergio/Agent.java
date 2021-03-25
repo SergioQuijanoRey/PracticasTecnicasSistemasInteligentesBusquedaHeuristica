@@ -223,7 +223,7 @@ public class Agent extends core.player.AbstractPlayer{
 
         // Decidimos cual es el nivel con los datos recogidos
         Boolean enemies_exist =  enemies != null && enemies.length > 0;
-        Boolean gems_exist = gems.length > 0;
+        Boolean gems_exist = gems != null && gems.length > 0;
 
         if(gems_exist == false && enemies_exist == false){
             this.current_level = 1;
