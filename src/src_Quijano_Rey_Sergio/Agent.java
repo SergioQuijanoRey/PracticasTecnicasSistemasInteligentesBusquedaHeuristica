@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.lang.Exception;
 import java.util.PriorityQueue;
 import java.util.HashSet;
+import java.awt.Dimension;
 
 // Tipos de datos auxiliares que he programado
 import src_Quijano_Rey_Sergio.GridPosition;
@@ -76,6 +77,18 @@ public class Agent extends core.player.AbstractPlayer{
     int number_of_gems_to_get = 9;
 
     /**
+     * Dimensiones del mundo. Para saber donde estan los extremos del mapa
+     * */
+    GridPosition world_dimensions_grid = null;
+
+    /**
+     * Posiciones inamovibles (muros) del mapa.
+     * Estas posiciones no se modifican a lo largo del juego asi que se calculan
+     * una unica vez
+     * */
+    HashSet<GridPosition> inmovable_grid_positions = null;
+
+    /**
      * Constructor del agente.
      * Tiene que recibir esos parametros de entrada porque asi se indica en [1]
      * @param so estado del mundo, dado como una observacion
@@ -94,6 +107,23 @@ public class Agent extends core.player.AbstractPlayer{
             // Cuando hay una excepcion porque no se ha hecho bien el calculo,
             // empleamos la planificacion mas avanzada que tenemos
             this.current_level = 5;
+        }
+
+        // Calculamos las dimensiones del mundo
+        Dimension world_dimensions = so.getWorldDimension();
+        this.world_dimensions_grid = new GridPosition(world_dimensions.width, world_dimensions.height);
+
+
+        // Conjunto de posiciones inamovibles. Necesario para calcular los
+        // nodos hijos validos y no repetir constantemente este calculo, pues
+        // las posiciones inamovibles no se modifican durante la partida
+        ArrayList<Observation>[] inmovables_obs = so.getImmovablePositions();
+        this.inmovable_grid_positions = new HashSet<GridPosition>();
+        for(ArrayList<Observation> row : inmovables_obs){
+            for(Observation obs : row){
+                GridPosition current_inmovable_grid = new GridPosition(obs.position, so);
+                this.inmovable_grid_positions.add(current_inmovable_grid);
+            }
         }
     }
 
@@ -263,7 +293,7 @@ public class Agent extends core.player.AbstractPlayer{
     void generate_planning(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         // TODO -- Sergio -- Borrar estos mensajes por pantalla
         System.out.println("Mostrando resultado de A*");
-        //System.out.println(this.a_star(stateObs, elapsedTimer));
+        System.out.println(this.a_star(stateObs, elapsedTimer));
 
         // Si no tenemos objetivo, debemos decidir hacia donde dirigirnos
         if(this.current_objective == null){
@@ -468,26 +498,24 @@ public class Agent extends core.player.AbstractPlayer{
         GridPosition objective_position = new GridPosition(this.current_objective, stateObs);
         open.add(new AStarNode(start_position, objective_position, new ArrayList<GridPosition>()));
 
-        // Conjunto de posiciones inamovibles. Necesario para calcular los
-        // nodos hijos validos y no repetir constantemente este calculo, pues
-        // las posiciones inamovibles no se modifican
-        ArrayList<Observation>[] inmovables_obs = stateObs.getImmovablePositions();
-        HashSet<GridPosition> inmovable_grid_positions = new HashSet<GridPosition>();
-        for(ArrayList<Observation> row : inmovables_obs){
-            for(Observation obs : row){
-                GridPosition current_inmovable_grid = new GridPosition(obs.position, stateObs);
-                inmovable_grid_positions.add(current_inmovable_grid);
-            }
-        }
-
         // TODO -- Sergio -- Borrar este counter
         int counter = 0;
-        while(open.isEmpty() == false && counter < 5000){
+        while(open.isEmpty() == false && counter < 1000){
             counter = counter + 1;
             // Tomo el siguiente elemento de abiertos. Esto es, el elemento mas
             // prometedor segun la heuristica que ya hemos indicado. Esta operacion
             // hace que el nodo salga del conjunto de abiertos
             AStarNode current = open.poll();
+
+            // Compruebo si el abierto estaba en cerrados. No estoy actualizando
+            // el conjunto de abiertos cuando encuentro un mejor camino a un abierto
+            // Asi que si el nodo extraido esta en cerrados, es porque hemos explorado
+            // un mejor camino hasta este nodo. Esto tambien gracias a que la
+            // heuristica es admisible, y por tanto, cuando saco por primera vez
+            // el nodo, es el mejor camino a ese nodo
+            if(closed.contains(current.get_position())){
+                continue;
+            }
 
             // El elemento pasa de abiertos a cerrados. Como trabajamos con posiciones
             // solo metemos la posicion, no toda la estructura de nodo
@@ -509,7 +537,7 @@ public class Agent extends core.player.AbstractPlayer{
             // Expando el nodo actual y paso los hijos del nodo al conjunto de abiertos
             // en caso de que la posicion que representa el nodo hijo no haya sido
             // ya explorada
-            ArrayList<AStarNode> childs = current.generate_childs(stateObs, inmovable_grid_positions);
+            ArrayList<AStarNode> childs = current.generate_childs(stateObs, this.inmovable_grid_positions, this.world_dimensions_grid);
             for(AStarNode child: childs){
                 boolean child_already_explored = closed.contains(child.get_position());
                 if(child_already_explored == false){

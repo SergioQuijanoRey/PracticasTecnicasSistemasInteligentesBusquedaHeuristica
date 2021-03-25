@@ -7,6 +7,8 @@ import java.util.HashSet;
 // Tipos de datos de GVGAI
 import core.game.StateObservation;
 import core.game.Observation;
+import java.awt.Dimension;
+import tools.Vector2d;
 
 // Mis tipos de datos auxiliares
 import src_Quijano_Rey_Sergio.GridPosition;
@@ -56,12 +58,13 @@ public class AStarNode implements Comparable<AStarNode>{
      * @param inmovable_grid_positions las posiciones a las que no nos podemos
      * desplazar. Pasandolo como parametro hace que no repitamos constantemnte
      * el calculo de estas posiciones
+     * @param world_dimensions_grid dimensiones en posiciones grid del mapa, para
+     * saber si las posiciones con las que trabajamos estan o no dentro del mapa
      * */
-    public ArrayList<AStarNode> generate_childs(StateObservation stateObs, HashSet<GridPosition> inmovable_grid_positions){
+    public ArrayList<AStarNode> generate_childs(StateObservation stateObs, HashSet<GridPosition> inmovable_grid_positions, GridPosition world_dimensions_grid){
         // Todos los hijos tienen como path el path del padre mas en nodo padre
         ArrayList<GridPosition> new_path = this.path_to_position;
         new_path.add(this.position);
-
 
         // Genero todos los hijos posibles, y me quedo con los que sean validos
         ArrayList<AStarNode> valid_childs = new ArrayList<AStarNode>();
@@ -77,9 +80,20 @@ public class AStarNode implements Comparable<AStarNode>{
 
                 // Compruebo las condiciones para que un punto no sea valido
                 // TODO -- Sergio -- No estoy comprobando que se salga por exceso del mapa
+                // Comprobamos que no nos salgamos por la izquierda o por arriba
+                // del mapa
                 if(new_x < 0 || new_y < 0){
                     continue;
                 }
+
+                // Comprobamos que no nos salgamos por la derecha o por debajo
+                // del mapa
+                if(new_x >= world_dimensions_grid.x || new_y >= world_dimensions_grid.y){
+                    System.out.println("==> DEBUG: me estoy saliendo del mapa por exceso");
+                    continue;
+                }
+
+
 
                 // Compruebo que no sea una posicion inmovible
                 if(inmovable_grid_positions.contains(new_position)){
