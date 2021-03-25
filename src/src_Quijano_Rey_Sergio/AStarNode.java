@@ -68,10 +68,15 @@ public class AStarNode implements Comparable<AStarNode>{
 
         // Genero todos los hijos posibles, y me quedo con los que sean validos
         ArrayList<AStarNode> valid_childs = new ArrayList<AStarNode>();
-        int[] x_deltas = {-1, 1};
-        int[] y_deltas = {-1, 1};
+        int[] x_deltas = {-1, 0, 1};
+        int[] y_deltas = {-1, 0, 1};
         for(int x_delta: x_deltas){
             for(int y_delta: y_deltas){
+
+                // No queremos generar repetitivamente el padre
+                if(x_delta == 0 && y_delta == 0){
+                    continue;
+                }
 
                 // Posicion resultante de aplicar los deltas
                 int new_x = this.position.x + x_delta;

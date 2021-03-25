@@ -496,10 +496,7 @@ public class Agent extends core.player.AbstractPlayer{
         GridPosition objective_position = new GridPosition(this.current_objective, stateObs);
         open.add(new AStarNode(start_position, objective_position, new ArrayList<GridPosition>()));
 
-        // TODO -- Sergio -- Borrar este counter
-        int counter = 0;
-        while(open.isEmpty() == false && counter < 1000){
-            counter = counter + 1;
+        while(open.isEmpty() == false){
             // Tomo el siguiente elemento de abiertos. Esto es, el elemento mas
             // prometedor segun la heuristica que ya hemos indicado. Esta operacion
             // hace que el nodo salga del conjunto de abiertos
@@ -522,7 +519,6 @@ public class Agent extends core.player.AbstractPlayer{
             // Compruebo si la posicion actual es la posicion objetivo
             if(current.get_position().x == objective_position.x && current.get_position().y == objective_position.y){
                 System.out.println("DEBUG: hemos encontrado el objetivo");
-                System.out.println("Iteraciones consumidas: " + counter);
                 // Hemos encontrado la solucion. Devuelvo el path al nodo actual
                 // juntandole este nodo
                 ArrayList<GridPosition> solution_path = current.get_path_to_position();
@@ -530,7 +526,6 @@ public class Agent extends core.player.AbstractPlayer{
                 solution_path.add(current.get_position());
                 return solution_path;
             }
-
 
             // Expando el nodo actual y paso los hijos del nodo al conjunto de abiertos
             // en caso de que la posicion que representa el nodo hijo no haya sido
@@ -549,7 +544,7 @@ public class Agent extends core.player.AbstractPlayer{
             }
         }
 
-        System.out.println("No hemos encontrado el objetivo, counter = " + counter);
+        System.out.println("No hemos encontrado el objetivo, porque nos hemos quedado sin abiertos");
 
         // La busqueda ha terminado porque hemos agotado los nodos de la lista de abiertos,
         // no porque hayamos encontrado el objetivo. Ha fracasado la busqueda, asi que
