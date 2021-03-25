@@ -518,11 +518,9 @@ public class Agent extends core.player.AbstractPlayer{
 
             // Compruebo si la posicion actual es la posicion objetivo
             if(current.get_position().x == objective_position.x && current.get_position().y == objective_position.y){
-                System.out.println("DEBUG: hemos encontrado el objetivo");
                 // Hemos encontrado la solucion. Devuelvo el path al nodo actual
                 // juntandole este nodo
                 ArrayList<GridPosition> solution_path = current.get_path_to_position();
-                System.out.println("Tamaño del path encontrado: " + solution_path.size());
                 solution_path.add(current.get_position());
                 return solution_path;
             }

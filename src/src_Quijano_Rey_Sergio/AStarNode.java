@@ -68,42 +68,46 @@ public class AStarNode implements Comparable<AStarNode>{
 
         // Genero todos los hijos posibles, y me quedo con los que sean validos
         ArrayList<AStarNode> valid_childs = new ArrayList<AStarNode>();
-        int[] x_deltas = {-1, 0, 1};
-        int[] y_deltas = {-1, 0, 1};
-        for(int x_delta: x_deltas){
-            for(int y_delta: y_deltas){
 
-                // No queremos generar repetitivamente el padre
-                if(x_delta == 0 && y_delta == 0){
-                    continue;
-                }
+        // Posibles variaciones en las coordenadas
+        int[][] deltas = {
+            {0, -1},
+            {0, 1},
+            {-1, 0},
+            {1, 0}
+        };
 
-                // Posicion resultante de aplicar los deltas
-                int new_x = this.position.x + x_delta;
-                int new_y = this.position.y + y_delta;
-                GridPosition new_position = new GridPosition(new_x, new_y);
+        for(int[] delta : deltas){
 
-                // Comprobamos que no nos salgamos por la izquierda o por arriba
-                // del mapa
-                if(new_x < 0 || new_y < 0){
-                    continue;
-                }
+            int x_delta = delta[0];
+            int y_delta = delta[1];
 
-                // Comprobamos que no nos salgamos por la derecha o por debajo
-                // del mapa
-                if(new_x >= world_dimensions_grid.x || new_y >= world_dimensions_grid.y){
-                    continue;
-                }
 
-                // Compruebo que no sea una posicion inmovible
-                if(inmovable_grid_positions.contains(new_position)){
-                    continue;
-                }
+            // Posicion resultante de aplicar los deltas
+            int new_x = this.position.x + x_delta;
+            int new_y = this.position.y + y_delta;
+            GridPosition new_position = new GridPosition(new_x, new_y);
 
-                // Todas las condiciones son validas, asi que añado el nodo a la
-                // lista de hijos validos
-                valid_childs.add(new AStarNode(new_position, this.objective, new_path));
+            // Comprobamos que no nos salgamos por la izquierda o por arriba
+            // del mapa
+            if(new_x < 0 || new_y < 0){
+                continue;
             }
+
+            // Comprobamos que no nos salgamos por la derecha o por debajo
+            // del mapa
+            if(new_x >= world_dimensions_grid.x || new_y >= world_dimensions_grid.y){
+                continue;
+            }
+
+            // Compruebo que no sea una posicion inmovible
+            if(inmovable_grid_positions.contains(new_position)){
+                continue;
+            }
+
+            // Todas las condiciones son validas, asi que añado el nodo a la
+            // lista de hijos validos
+            valid_childs.add(new AStarNode(new_position, this.objective, new_path));
         }
 
         return valid_childs;
