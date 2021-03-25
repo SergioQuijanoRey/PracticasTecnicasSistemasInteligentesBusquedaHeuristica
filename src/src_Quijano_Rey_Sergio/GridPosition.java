@@ -42,6 +42,7 @@ public class GridPosition{
      * */
     GridPosition(Vector2d position, StateObservation stateObs){
         // Factor de escala de pixeles a grid
+        // TODO -- Sergio -- sacar el factor de escala porque es repetir calculos
         Vector2d vector_escala = new Vector2d(
             stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
             stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length
@@ -50,6 +51,28 @@ public class GridPosition{
         // Usamos el vector de escala para realizar la conversion
         this.x = (int) Math.floor(position.x / vector_escala.x);
         this.y = (int) Math.floor(position.y / vector_escala.y);
+    }
+
+    /**
+     * A partir de una posicion en pixeles enteros, genera la posicion en el grid.
+     * @param position la posicion en
+     * @param stateObs observacion del mundo. Necesario para conocer el tamaño
+     * del mundo y con ello hacer la conversion
+     *
+     * Codigo basado en el dado en el tutorial de GVGAI de los profesores de practicas
+     * */
+    GridPosition(int pixel_x, int pixel_y, StateObservation stateObs){
+        // Factor de escala de pixeles a grid
+        // TODO -- Sergio -- sacar el factor de escala porque es repetir calculos
+        Vector2d vector_escala = new Vector2d(
+            stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
+            stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length
+        );
+
+        // Usamos el vector de escala para realizar la conversion
+        this.x = (int) Math.floor(pixel_x / vector_escala.x);
+        this.y = (int) Math.floor(pixel_y / vector_escala.y);
+
     }
 
     /**
@@ -64,5 +87,11 @@ public class GridPosition{
         int y_diff = Math.abs(first.y - second.y);
         return x_diff + y_diff;
 
+    }
+
+    @Override
+    public String toString(){
+        String msg = "GridPosition(x: " + this.x + " y: " + this.y + ")";
+        return msg;
     }
 }

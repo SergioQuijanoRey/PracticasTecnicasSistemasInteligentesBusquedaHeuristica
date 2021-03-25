@@ -111,7 +111,7 @@ public class Agent extends core.player.AbstractPlayer{
 
         // Calculamos las dimensiones del mundo
         Dimension world_dimensions = so.getWorldDimension();
-        this.world_dimensions_grid = new GridPosition(world_dimensions.width, world_dimensions.height);
+        this.world_dimensions_grid = new GridPosition(world_dimensions.width, world_dimensions.height, so);
 
 
         // Conjunto de posiciones inamovibles. Necesario para calcular los
@@ -125,6 +125,9 @@ public class Agent extends core.player.AbstractPlayer{
                 this.inmovable_grid_positions.add(current_inmovable_grid);
             }
         }
+
+        System.out.println("Posiciones inamovibles: " + this.inmovable_grid_positions);
+        System.out.println("Tamaño del mapa: " + this.world_dimensions_grid);
     }
 
     /**
@@ -150,7 +153,7 @@ public class Agent extends core.player.AbstractPlayer{
         return resources.get(6);
     }
 
-    /**
+   /**
      * Elige una accion conociendo el estado del mundo, el nivel y el tiempo que ya esta consumido
      * @param stateObs estado del mundo
      * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
@@ -514,6 +517,7 @@ public class Agent extends core.player.AbstractPlayer{
             // heuristica es admisible, y por tanto, cuando saco por primera vez
             // el nodo, es el mejor camino a ese nodo
             if(closed.contains(current.get_position())){
+                System.out.println("==> DEBUG abierto ya explorado");
                 continue;
             }
 
