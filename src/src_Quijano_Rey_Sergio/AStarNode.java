@@ -78,8 +78,6 @@ public class AStarNode implements Comparable<AStarNode>{
                 int new_y = this.position.y + y_delta;
                 GridPosition new_position = new GridPosition(new_x, new_y);
 
-                // Compruebo las condiciones para que un punto no sea valido
-                // TODO -- Sergio -- No estoy comprobando que se salga por exceso del mapa
                 // Comprobamos que no nos salgamos por la izquierda o por arriba
                 // del mapa
                 if(new_x < 0 || new_y < 0){
@@ -89,11 +87,8 @@ public class AStarNode implements Comparable<AStarNode>{
                 // Comprobamos que no nos salgamos por la derecha o por debajo
                 // del mapa
                 if(new_x >= world_dimensions_grid.x || new_y >= world_dimensions_grid.y){
-                    System.out.println("==> DEBUG: me estoy saliendo del mapa por exceso");
                     continue;
                 }
-
-
 
                 // Compruebo que no sea una posicion inmovible
                 if(inmovable_grid_positions.contains(new_position)){

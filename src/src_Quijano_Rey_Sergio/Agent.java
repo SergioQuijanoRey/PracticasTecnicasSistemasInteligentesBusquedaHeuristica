@@ -480,11 +480,6 @@ public class Agent extends core.player.AbstractPlayer{
         // Conjunto de posiciones abiertas
         // Es un conjunto ordenado segun la suma de coste acumulado de la posicion
         // y la distancia manhattan al objetivo
-        // Cuando especificamos un comparador customizado, hay que especificar
-        // tambien la capacidad del PriorityQueue
-        // TODO -- Sergio -- calcular el tamaño del mundo en gridpositions y
-        // tomar una capacidad en base a ello
-        int initial_capacity = 100;
         PriorityQueue<AStarNode> open = new PriorityQueue<AStarNode>();
 
         // Conjunto de posiciones cerradas
@@ -517,7 +512,6 @@ public class Agent extends core.player.AbstractPlayer{
             // heuristica es admisible, y por tanto, cuando saco por primera vez
             // el nodo, es el mejor camino a ese nodo
             if(closed.contains(current.get_position())){
-                System.out.println("==> DEBUG abierto ya explorado");
                 continue;
             }
 
@@ -543,10 +537,15 @@ public class Agent extends core.player.AbstractPlayer{
             // ya explorada
             ArrayList<AStarNode> childs = current.generate_childs(stateObs, this.inmovable_grid_positions, this.world_dimensions_grid);
             for(AStarNode child: childs){
+
+                // Si el nodo ya ha sido explorado, no hacemos nada mas
                 boolean child_already_explored = closed.contains(child.get_position());
-                if(child_already_explored == false){
-                    open.add(child);
+                if(child_already_explored == true){
+                    continue;
                 }
+
+                open.add(child);
+
             }
         }
 

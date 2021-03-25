@@ -1,5 +1,14 @@
 package src_Quijano_Rey_Sergio;
 
+/**
+ * Enlaces usados:
+ *
+ * [1] http://users.csc.calpoly.edu/~gfisher/classes/102/info/howToOverrideEquals.html#:~:text=Notice%20the%20use%20of%20the,String%20objects%20character%20by%20character.&text=Remember%2C%20every%20class%20in%20Java,an%20Object%20(via%20inheritance)
+ *  - Tutorial para hacer la sobrecarga del operador de igualdad
+ * [2] http://lineadecodigo.com/java/usando-las-clases-hashset-y-hashmap/
+ *  - Tutorial donde veo que tambien tengo que sobreescribir el operador de hash
+ * */
+
 // Clases de GVGAI
 import tools.Vector2d;
 import core.game.StateObservation;
@@ -89,9 +98,48 @@ public class GridPosition{
 
     }
 
+    /**
+     * Para debuggear posiciones por la terminal. No tiene impacto en el proyecto
+     * final porque no podemos mostrar mensajes por pantalla
+     * */
     @Override
     public String toString(){
         String msg = "GridPosition(x: " + this.x + " y: " + this.y + ")";
         return msg;
+    }
+
+    /**
+     * Sobrecargamos el operador de igualdad.
+     * De otra forma, se comprueba que el puntero de un objeto sea igual que
+     * otro puntero del objeto con el que se compara. Esto da problemas en el
+     * HashSet de posiciones que usamos en A*
+     * Gracias a [1] consigo programar esta sobrecarga
+     * */
+    @Override
+    public boolean equals(Object o){
+        // Para evitar errores de puntero nulo
+        if(o == null){
+            return false;
+        }
+
+        // Para comprobar que estamos comparando con la misma clase
+        if(this.getClass() != o.getClass()){
+            return false;
+        }
+
+        // Casteamos y devolvemos la igualdad que queremos
+        GridPosition o_casted = (GridPosition) o;
+        return this.x == o_casted.x && this.y == o_casted.y;
+    }
+
+    /**
+     * Sobreescribimos el codigo del hash, porque en otro caso se usa el valor
+     * de la referencia. Gracias a [2]
+     *
+     * @return el entero sobre el que vamos a hacer hash
+     * */
+    @Override
+    public int hashCode(){
+        return this.x * this.y;
     }
 }
