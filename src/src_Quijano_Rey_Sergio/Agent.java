@@ -257,7 +257,8 @@ public class Agent extends core.player.AbstractPlayer{
      * mas ligero de ejecutar
      * */
     void calculate_actions_to_move(GridPosition next_position, StateObservation stateObs){
-        // Si quedan acciones por ejecutar, no hacemos nada
+        // Si quedan acciones por ejecutar, no calculamos nada porque las acciones
+        // del buffer deben ser consumidas previamente
         if(this.action_buffer != null && this.action_buffer.isEmpty() == false){
             return;
         }
@@ -275,21 +276,21 @@ public class Agent extends core.player.AbstractPlayer{
         GridPosition avatar_position_at_grid = new GridPosition(avatar_position, stateObs);
         GridPosition movement = avatar_position_at_grid.minus(next_position);
 
-        System.out.println("La orientacion del avatar es " + stateObs.getAvatarOrientation());
+        System.out.println("Estoy en " + avatar_position_at_grid + " y quiero ir a " + next_position);
 
         // Devolvemos la accion segun lo dado
         // Primero miramos desplazamientos verticales y despues desplazamientos
         // horizontales. Esto deberia dar igual pues en la planificacion no consideramos
         // movimientos diagonales en el grid
         // TODO -- Sergio -- Comprobar que esto este bien
-        if(movement.x < 0){
+        if(movement.x > 0){
             this.action_buffer.add(Types.ACTIONS.ACTION_LEFT);
 
             // Mala orientacion, tenemos que realizar dos acciones
             if(orientation.isLookingLeft() == false){
                 this.action_buffer.add(Types.ACTIONS.ACTION_LEFT);
             }
-        }else if(movement.x > 0){
+        }else if(movement.x < 0){
             this.action_buffer.add(Types.ACTIONS.ACTION_RIGHT);
 
             // Mala orientacion, tenemos que realizar dos acciones
@@ -473,6 +474,7 @@ public class Agent extends core.player.AbstractPlayer{
      * TODO -- comprobar los tiempos y parar cuando quede poco tiempo de computo
      * */
     ArrayList<GridPosition> a_star(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        System.out.println("Estamos ejecutando A*");
         // TODO -- Sergio -- Anotaciones sobre el codigo
         // - Quiero hacer a_star sobre posiciones, no sobre estados, porque los estados
         // consumen mucha mas memoria
@@ -537,6 +539,7 @@ public class Agent extends core.player.AbstractPlayer{
                 // juntandole este nodo
                 ArrayList<GridPosition> solution_path = current.get_path_to_position();
                 solution_path.add(current.get_position());
+                System.out.println("A* ha encontrado el objetivo");
                 return solution_path;
             }
 
