@@ -70,6 +70,7 @@ public class AStarNode implements Comparable<AStarNode>{
         ArrayList<AStarNode> valid_childs = new ArrayList<AStarNode>();
 
         // Posibles variaciones en las coordenadas
+        // TODO -- Sergio -- No estoy muy seguro de esto
         int[][] deltas = {
             {0, -1},
             {0, 1},

@@ -57,10 +57,10 @@ public class Agent extends core.player.AbstractPlayer{
      * Plan construido para ir al objetivo actual.
      * Si plan = null, no tenemos ningun plan construido y hay que generar uno
      *
-     * TODO -- Sergio -- usar Vector2D en vez de acciones, y de alguna forma,
-     * convertir una posicion en una accion
+     * Trabajamos con posiciones en el mapa, que convertiremos a acciones para
+     * pasar de una posicion a otra
      * */
-    ArrayList<Types.ACTIONS> plan = null;
+    ArrayList<GridPosition> plan = null;
 
     /**
      * Objetivo actual a perseguir.
@@ -69,6 +69,13 @@ public class Agent extends core.player.AbstractPlayer{
      * cual queremos que sea nuestro siguiente objetivo
      * */
     Vector2d current_objective = null;
+
+    /**
+     * Buffer de acciones a realizar. Esto se usa porque en ocasiones, para movernos
+     * de una GridPosition a otra, necesitamos ejecutar mas de una accion (cambio
+     * de sentido)
+     * */
+    ArrayList<Types.ACTIONS> action_buffer = null;
 
     /**
      * Numero de gemas que hay que conseguir en ciertos niveles para escapar por
@@ -199,17 +206,60 @@ public class Agent extends core.player.AbstractPlayer{
      *
      * */
     public Types.ACTIONS level1_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        // Tenemos acciones en el buffer a realizar
+        // Devolvemos la accion antes de cambiar la posicion del grid a la que nos movemos
+        if(this.action_buffer != null && this.action_buffer.isEmpty() == false){
+            return this.return_buffered_action();
+        }
+
         // No tenemos un plan construido, hay que generarlo
         if(this.plan == null || this.plan.size() == 0){
             this.generate_planning(stateObs, elapsedTimer);
         }
 
-        // Tenemos un plan construido. Tomamos una accion del plan y la quitamos
-        // del arraylist que representa el plan
-        Types.ACTIONS next_action = this.plan.get(0);
+        // Extraemos la siguiente posicion del mapa a la que nos tenemos que dirigir
+        GridPosition next_position = this.plan.get(0);
         this.plan.remove(0);
-        return next_action;
 
+        // Calculamos las acciones que tenemos que realizar para movernos
+        this.calculate_actions_to_move(next_position, stateObs);
+
+        // Devolvemos la accion a realizar
+        return this.return_buffered_action();
+
+
+    }
+
+    /**
+     * Devuelve la primera accion guardada en this.action_buffer y la elimina
+     * de la lista
+     * */
+    Types.ACTIONS return_buffered_action(){
+        Types.ACTIONS next = this.action_buffer.get(0);
+        this.action_buffer.remove(0);
+        return next;
+    }
+
+    /**
+     * Calcula las acciones (que guarda en this.action_buffer) para movernos a
+     * la posicion dada como parametro
+     * @param next_position posicion a la que nos queremos mover
+     * @param stateObs estado del mundo, para saber donde se encuentra nuestro avatar
+     *
+     * TODO -- Sergio -- No pasar stateObs, sino la posicion anterior, porque es
+     * mas ligero de ejecutar
+     * */
+    void calculate_actions_to_move(GridPosition next_position, StateObservation stateObs){
+        // Si quedan acciones por ejecutar, no hacemos nada
+        if(this.action_buffer != null && this.action_buffer.isEmpty() == false){
+            return;
+        }
+
+        // Limpiamos el buffer de acciones, o lo instanciamos si antes era null
+        this.action_buffer = new ArrayList<Types.ACTIONS>();
+
+        // Calculamos las acciones
+        this.action_buffer.add(Types.ACTIONS.ACTION_DOWN);
     }
 
     /**
@@ -281,7 +331,7 @@ public class Agent extends core.player.AbstractPlayer{
     }
 
     /**
-     * Calcula un plan con A* para ir de un punto a otro
+     * Calcula un plan con A* para ir de un punto a otro.
      *
      * @param stateObs estado del mundo
      * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
@@ -292,77 +342,18 @@ public class Agent extends core.player.AbstractPlayer{
      *
      * TODO -- Sergio -- Comprobar que tenemos tiempo de sobra. Cuando nos estemos
      * quedando sin tiempo, parar la busqueda este la cosa como este
+     *
+     * TODO -- Sergio -- Creo que este metodo sobra ahora que estamos usando A*
      * */
     void generate_planning(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        // TODO -- Sergio -- Borrar estos mensajes por pantalla
-        System.out.println("Mostrando resultado de A*");
-        System.out.println(this.a_star(stateObs, elapsedTimer));
 
         // Si no tenemos objetivo, debemos decidir hacia donde dirigirnos
         if(this.current_objective == null){
             this.choose_objective(stateObs, elapsedTimer);
         }
 
-        // Seteamos el plan a un arraylist vacio
-        this.plan = new ArrayList<Types.ACTIONS>();
-
-        // Estado temporal. Operamos con el para saber cuales son las consecuencias
-        // de nuestras acciones al construir un plan
-        // TODO -- Sergio -- No se si el copy hace falta. Si no hace falta, quitarlo
-        // porque puede ser que estemos perdiendo tiempo
-        StateObservation current_state = stateObs.copy();
-
-
-        // Construimos aleatoriamente un plan
-        // TODO -- Sergio -- Quitar esta cota y comprobar los tiempos
-        int max_steps = 70;
-        for(int i = 0; i < max_steps; i++){
-            Types.ACTIONS action;
-
-            // Posicion del jugador en el estado actual, despues de haber
-            // tomado las acciones que hemos ido construyendo
-            Vector2d player_position = current_state.getAvatarPosition();
-
-            // Calculamos el vector entre el objetivo y el personaje
-            Vector2d diff_vec = this.current_objective.copy();
-            diff_vec.subtract(player_position);
-
-            // Calculamos la accion segun el vector diferencia
-            double x_diff = diff_vec.x;
-            double y_diff = diff_vec.y;
-
-            // No nos podemos mover en diagonal. Primero me muevo en horizontal,
-            // despues en vertical
-            if(x_diff < 0){
-                action = Types.ACTIONS.ACTION_LEFT;
-
-            }else if(x_diff > 0){
-                action = Types.ACTIONS.ACTION_RIGHT;
-
-            // Hemos terminado de movernos en horizontal, ahora nos movemos en vertical
-            }else{
-                if(y_diff < 0){
-                    action = Types.ACTIONS.ACTION_UP;
-                }else if(y_diff > 0){
-                    action = Types.ACTIONS.ACTION_DOWN;
-
-                // Posicion correcta de X e Y, hemos llegado al objetivo
-                }else{
-                    // Establecemos el objetivo a null para que en la siguiente
-                    // iteracion se calcule un nuevo objetivo
-                    this.current_objective = null;
-                    break;
-                }
-            }
-
-
-            // Añadimos la accion al plan
-            this.plan.add(action);
-
-            // Miramos como se queda el estado del mundo tras realizar la accion
-            // elegida
-            current_state.advance(action);
-        }
+        // Calculamos el nuevo plan usando A*
+        this.plan = this.a_star(stateObs, elapsedTimer);
     }
 
     /**
@@ -548,6 +539,5 @@ public class Agent extends core.player.AbstractPlayer{
         // no porque hayamos encontrado el objetivo. Ha fracasado la busqueda, asi que
         // devolvemos un ArrayList vacio para representar este hecho
         return new ArrayList<GridPosition>();
-
     }
 }
