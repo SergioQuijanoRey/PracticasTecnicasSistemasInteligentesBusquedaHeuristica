@@ -34,6 +34,7 @@ import java.awt.Dimension;
 // Tipos de datos auxiliares que he programado
 import src_Quijano_Rey_Sergio.GridPosition;
 import src_Quijano_Rey_Sergio.AStarNode;
+import src_Quijano_Rey_Sergio.Orientation;
 
 /**
  * Codigo del agente inteligente que vamos a desarrollar para resolver el juego
@@ -214,7 +215,7 @@ public class Agent extends core.player.AbstractPlayer{
 
         // No tenemos un plan construido, hay que generarlo
         if(this.plan == null || this.plan.size() == 0){
-            this.generate_planning(stateObs, elapsedTimer);
+            this.plan = this.a_star(stateObs, elapsedTimer);
         }
 
         // Extraemos la siguiente posicion del mapa a la que nos tenemos que dirigir
@@ -267,11 +268,14 @@ public class Agent extends core.player.AbstractPlayer{
         // Orientacion del jugador. Nos indica si tenemos que realizar una o
         // dos acciones
         Vector2d current_orientation = stateObs.getAvatarOrientation();
+        Orientation orientation = new Orientation(current_orientation);
 
         // Calculamos el desplazamiento del jugador
         Vector2d avatar_position = stateObs.getAvatarPosition();
         GridPosition avatar_position_at_grid = new GridPosition(avatar_position, stateObs);
         GridPosition movement = avatar_position_at_grid.minus(next_position);
+
+        System.out.println("La orientacion del avatar es " + stateObs.getAvatarOrientation());
 
         // Devolvemos la accion segun lo dado
         // Primero miramos desplazamientos verticales y despues desplazamientos
@@ -280,12 +284,32 @@ public class Agent extends core.player.AbstractPlayer{
         // TODO -- Sergio -- Comprobar que esto este bien
         if(movement.x < 0){
             this.action_buffer.add(Types.ACTIONS.ACTION_LEFT);
+
+            // Mala orientacion, tenemos que realizar dos acciones
+            if(orientation.isLookingLeft() == false){
+                this.action_buffer.add(Types.ACTIONS.ACTION_LEFT);
+            }
         }else if(movement.x > 0){
             this.action_buffer.add(Types.ACTIONS.ACTION_RIGHT);
+
+            // Mala orientacion, tenemos que realizar dos acciones
+            if(orientation.isLookingRight() == false){
+                this.action_buffer.add(Types.ACTIONS.ACTION_RIGHT);
+            }
         }else if(movement.y < 0){
             this.action_buffer.add(Types.ACTIONS.ACTION_DOWN);
+
+            // Mala orientacion, tenemos que realizar dos acciones
+            if(orientation.isLookingDown() == false){
+                this.action_buffer.add(Types.ACTIONS.ACTION_DOWN);
+            }
         }else if(movement.y > 0){
             this.action_buffer.add(Types.ACTIONS.ACTION_UP);
+
+            // Mala orientacion, tenemos que realizar dos acciones
+            if(orientation.isLookingUp() == false){
+                this.action_buffer.add(Types.ACTIONS.ACTION_UP);
+            }
         }
     }
 
@@ -358,32 +382,6 @@ public class Agent extends core.player.AbstractPlayer{
     }
 
     /**
-     * Calcula un plan con A* para ir de un punto a otro.
-     *
-     * @param stateObs estado del mundo
-     * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
-     * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
-     *
-     * Si no tenemos un objetivo, se decidie cual es nuestro objetivo para poder
-     * hacer un plan que nos lleve desde la posicion del jugador hasta el objetivo
-     *
-     * TODO -- Sergio -- Comprobar que tenemos tiempo de sobra. Cuando nos estemos
-     * quedando sin tiempo, parar la busqueda este la cosa como este
-     *
-     * TODO -- Sergio -- Creo que este metodo sobra ahora que estamos usando A*
-     * */
-    void generate_planning(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-
-        // Si no tenemos objetivo, debemos decidir hacia donde dirigirnos
-        if(this.current_objective == null){
-            this.choose_objective(stateObs, elapsedTimer);
-        }
-
-        // Calculamos el nuevo plan usando A*
-        this.plan = this.a_star(stateObs, elapsedTimer);
-    }
-
-    /**
      * Calcula el siguiente objetivo.
      * Cuando no tenemos suficientes gemas, elige como objetivo la gema mas cercana
      * Cuando tenemos todas las gemas (o cuando no hay gemas en el mapa), elige
@@ -400,7 +398,6 @@ public class Agent extends core.player.AbstractPlayer{
             // Puede ser que tengamos mas de las gemas necesarias porque casualmente
             // pasemos por encima de una gema de camino a otro objetivo
             if(this.get_current_gems(stateObs, elapsedTimer) >= this.number_of_gems_to_get){
-                System.out.println("Establecemos como objetivo el portal porque ya tenemos todas las gemas");
                 this.choose_objective_as_closest_portal(stateObs, elapsedTimer);
 
                 // Hacemos return para no llamar a this.choose_objective_as_closest_gem
