@@ -235,9 +235,15 @@ public class Agent extends core.player.AbstractPlayer{
      * de la lista
      * */
     Types.ACTIONS return_buffered_action(){
-        Types.ACTIONS next = this.action_buffer.get(0);
-        this.action_buffer.remove(0);
-        return next;
+        if(this.action_buffer != null && this.action_buffer.size() > 0){
+            Types.ACTIONS next = this.action_buffer.get(0);
+            this.action_buffer.remove(0);
+            return next;
+        }else{
+            // TODO -- Sergio -- Borrar estos mensajes por pantalla
+            System.out.println("No hay accion en el buffer, se devuelve la accion nula");
+            return Types.ACTIONS.ACTION_NIL;
+        }
     }
 
     /**
@@ -258,8 +264,29 @@ public class Agent extends core.player.AbstractPlayer{
         // Limpiamos el buffer de acciones, o lo instanciamos si antes era null
         this.action_buffer = new ArrayList<Types.ACTIONS>();
 
-        // Calculamos las acciones
-        this.action_buffer.add(Types.ACTIONS.ACTION_DOWN);
+        // Orientacion del jugador. Nos indica si tenemos que realizar una o
+        // dos acciones
+        Vector2d current_orientation = stateObs.getAvatarOrientation();
+
+        // Calculamos el desplazamiento del jugador
+        Vector2d avatar_position = stateObs.getAvatarPosition();
+        GridPosition avatar_position_at_grid = new GridPosition(avatar_position, stateObs);
+        GridPosition movement = avatar_position_at_grid.minus(next_position);
+
+        // Devolvemos la accion segun lo dado
+        // Primero miramos desplazamientos verticales y despues desplazamientos
+        // horizontales. Esto deberia dar igual pues en la planificacion no consideramos
+        // movimientos diagonales en el grid
+        // TODO -- Sergio -- Comprobar que esto este bien
+        if(movement.x < 0){
+            this.action_buffer.add(Types.ACTIONS.ACTION_LEFT);
+        }else if(movement.x > 0){
+            this.action_buffer.add(Types.ACTIONS.ACTION_RIGHT);
+        }else if(movement.y < 0){
+            this.action_buffer.add(Types.ACTIONS.ACTION_DOWN);
+        }else if(movement.y > 0){
+            this.action_buffer.add(Types.ACTIONS.ACTION_UP);
+        }
     }
 
     /**

@@ -142,4 +142,12 @@ public class GridPosition{
     public int hashCode(){
         return this.x * this.y;
     }
+
+    /**
+     * Util para calcular la diferencia entre dos posiciones, y con ello, saber
+     * en que direccion movernos para pasar de la primera posicion a la segunda
+     * */
+    public GridPosition minus(GridPosition other){
+        return new GridPosition(this.x - other.x, this.y - other.y);
+    }
 }
