@@ -150,4 +150,12 @@ public class GridPosition{
     public GridPosition minus(GridPosition other){
         return new GridPosition(this.x - other.x, this.y - other.y);
     }
+
+    /**
+     * Util para calcular desplazamientos de posiciones
+     * */
+    public GridPosition plus(GridPosition other){
+        return new GridPosition(this.x + other.x, this.y + other.y);
+    }
+
 }
