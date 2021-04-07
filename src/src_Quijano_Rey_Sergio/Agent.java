@@ -596,6 +596,7 @@ public class Agent extends core.player.AbstractPlayer{
             // ya explorada
             ArrayList<AStarNode> childs = current.generate_childs(stateObs, this.inmovable_grid_positions, this.world_dimensions_grid);
             for(AStarNode child: childs){
+                System.out.println("__> Iterando en A*");
                 // Hijo coincide con el padre, asi que no hacemos comprobaciones, no se considera
                 // TODO -- Sergio -- Creo que como genero los hijos esto no puede pasar
                 // asi que borrar este if
