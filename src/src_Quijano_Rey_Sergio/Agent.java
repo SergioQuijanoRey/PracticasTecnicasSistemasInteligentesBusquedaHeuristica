@@ -467,7 +467,7 @@ public class Agent extends core.player.AbstractPlayer{
         this.current_objective = gems[0].get(0).position;
     }
 
-    ArrayList<GridPosition> a_star(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+    ArrayList<GridPosition> a_star_mal(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         System.out.println("Lanzo A* mal");
 
         // No tenemos objetivo, por lo que tenemos que decidir a donde nos queremos
@@ -524,4 +524,110 @@ public class Agent extends core.player.AbstractPlayer{
         System.out.println("A* mal devuelve: " + solution);
         return solution;
     }
+
+    /**
+     * Algoritmo A* para devolver una lista de posiciones para llevar al jugador
+     * al objetivo marcado.
+     *
+     * @param stateObs estado del mundo
+     * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
+     * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
+     * @return la lista ordenada de posiciones en el grid que representan el camino
+     *
+     * Se devuelven posiciones. Por tanto, el metodo que llame a este metodo es
+     * responsable de convertir las posiciones en acciones
+     *
+     * Cuando no tenemos un objetivo, se llama al metodo que elige el siguiente
+     * objetivo
+     *
+     * TODO -- comprobar los tiempos y parar cuando quede poco tiempo de computo
+     * TODO -- este A* esta mal hecho, porque con otras planificaciones si que va
+     * */
+    ArrayList<GridPosition> a_star(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+
+        // No tenemos objetivo, por lo que tenemos que decidir a donde nos queremos
+        // dirigir
+        if(this.current_objective == null){
+            this.choose_objective(stateObs, elapsedTimer);
+        }
+
+        // Conjunto de posiciones abiertas
+        // Es un conjunto ordenado segun la suma de coste acumulado de la posicion
+        // y la distancia manhattan al objetivo
+        PriorityQueue<AStarNode> open = new PriorityQueue<AStarNode>();
+
+        // Conjunto de posiciones cerradas
+        // Le heuristica que vamos a usar es admisible. Esto, junto a que todas
+        // las acciones tienen el mismo coste (no hay tipos de suelo que modifiquen
+        // los costes), hace que no tengamos que modificar el conjunto de cerrados
+        // TODO -- Sergio -- Asegurarme de que esto que estoy diciendo es correcto
+        HashSet<GridPosition> closed = new HashSet<GridPosition>();
+
+
+        // Para arrancar, el nodo asociado a la posicion inicial (la posicion del jugador)
+        // es añadido al conjunto de abiertos
+        GridPosition start_position = new GridPosition(stateObs.getAvatarPosition(), stateObs);
+        GridPosition objective_position = new GridPosition(this.current_objective, stateObs);
+        open.add(new AStarNode(start_position, objective_position, new ArrayList<GridPosition>()));
+
+        while(open.isEmpty() == false){
+            // Tomo el siguiente elemento de abiertos. Esto es, el elemento mas
+            // prometedor segun la heuristica que ya hemos indicado. Esta operacion
+            // hace que el nodo salga del conjunto de abiertos
+            AStarNode current = open.poll();
+
+            // Compruebo si el abierto estaba en cerrados. No estoy actualizando
+            // el conjunto de abiertos cuando encuentro un mejor camino a un abierto
+            // Asi que si el nodo extraido esta en cerrados, es porque hemos explorado
+            // un mejor camino hasta este nodo. Esto tambien gracias a que la
+            // heuristica es admisible, y por tanto, cuando saco por primera vez
+            // el nodo, es el mejor camino a ese nodo
+            if(closed.contains(current.get_position())){
+                continue;
+            }
+
+            // El elemento pasa de abiertos a cerrados. Como trabajamos con posiciones
+            // solo metemos la posicion, no toda la estructura de nodo
+            closed.add(current.get_position());
+
+            // Compruebo si la posicion actual es la posicion objetivo
+            if(current.get_position().x == objective_position.x && current.get_position().y == objective_position.y){
+                // Hemos encontrado la solucion. Devuelvo el path al nodo actual
+                // juntandole este nodo
+                ArrayList<GridPosition> solution_path = current.get_path_to_position();
+                solution_path.add(current.get_position());
+
+                // Ademas, borro el objetivo actual para que en la siguiente
+                // busqueda se escoja el siguiente objetivo
+                this.current_objective = null;
+
+                return solution_path;
+            }
+
+            // Expando el nodo actual y paso los hijos del nodo al conjunto de abiertos
+            // en caso de que la posicion que representa el nodo hijo no haya sido
+            // ya explorada
+            ArrayList<AStarNode> childs = current.generate_childs(stateObs, this.inmovable_grid_positions, this.world_dimensions_grid);
+            for(AStarNode child: childs){
+
+                // Si el nodo ya ha sido explorado, no hacemos nada mas
+                boolean child_already_explored = closed.contains(child.get_position());
+                if(child_already_explored == true){
+                    continue;
+                }
+
+                open.add(child);
+
+            }
+        }
+
+        System.out.println("No hemos encontrado el objetivo, porque nos hemos quedado sin abiertos");
+
+        // La busqueda ha terminado porque hemos agotado los nodos de la lista de abiertos,
+        // no porque hayamos encontrado el objetivo. Ha fracasado la busqueda, asi que
+        // devolvemos un ArrayList vacio para representar este hecho
+        return new ArrayList<GridPosition>();
+
+    }
+
 }
