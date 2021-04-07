@@ -18,6 +18,7 @@ import src_Quijano_Rey_Sergio.GridPosition;
  * Este nodo se compone de un GridPosition y una lista de GridPosition, que nos
  * lleva desde la posicion inicial hasta esta posicion
  * @author Sergio Quijano Rey
+ *
  * */
 public class AStarNode implements Comparable<AStarNode>{
     /**
@@ -38,12 +39,20 @@ public class AStarNode implements Comparable<AStarNode>{
     ArrayList<GridPosition> path_to_position;
 
     /**
+     * Coste del camino a la posicion actual. Tenemos que guardarlo aparte y no
+     * calcularlo a paritr de path_to_position porque los cambios de direccion
+     * añaden costes adicionales
+     * */
+    int path_cost;
+
+    /**
      * Constructor
      * */
-    AStarNode(GridPosition position, GridPosition objective, ArrayList<GridPosition> path_to_position){
+    AStarNode(GridPosition position, GridPosition objective, ArrayList<GridPosition> path_to_position, int path_cost){
         this.position = position;
         this.objective = objective;
         this.path_to_position = path_to_position;
+        this.path_cost = path_cost;
     }
 
     /**
@@ -60,6 +69,8 @@ public class AStarNode implements Comparable<AStarNode>{
      * el calculo de estas posiciones
      * @param world_dimensions_grid dimensiones en posiciones grid del mapa, para
      * saber si las posiciones con las que trabajamos estan o no dentro del mapa
+     *
+     * TODO -- Sergio -- añadir el coste de cambiar de sentido
      * */
     public ArrayList<AStarNode> generate_childs(StateObservation stateObs, HashSet<GridPosition> inmovable_grid_positions, GridPosition world_dimensions_grid){
         // Todos los hijos tienen como path el path del padre mas en nodo padre
@@ -70,7 +81,6 @@ public class AStarNode implements Comparable<AStarNode>{
         ArrayList<AStarNode> valid_childs = new ArrayList<AStarNode>();
 
         // Posibles variaciones en las coordenadas
-        // TODO -- Sergio -- No estoy muy seguro de esto
         int[][] deltas = {
             {0, -1},
             {0, 1},
@@ -80,9 +90,9 @@ public class AStarNode implements Comparable<AStarNode>{
 
         for(int[] delta : deltas){
 
+            // Variacion descompuesta en las coordenadas
             int x_delta = delta[0];
             int y_delta = delta[1];
-
 
             // Posicion resultante de aplicar los deltas
             int new_x = this.position.x + x_delta;
@@ -101,14 +111,19 @@ public class AStarNode implements Comparable<AStarNode>{
                 continue;
             }
 
-            // Compruebo que no sea una posicion inmovible
+            // Compruebo que no sea una posicion inmovible, es decir, un muro
             if(inmovable_grid_positions.contains(new_position)){
                 continue;
             }
 
+            // Coste extra derivado de cambiar de direccion
+            // TODO -- Sergio -- calcular coste añadido de cambiar de direccion
+            // porque ahora no estamos haciendo nada
+            int extra_cost = 0;
+
             // Todas las condiciones son validas, asi que añado el nodo a la
             // lista de hijos validos
-            valid_childs.add(new AStarNode(new_position, this.objective, new_path));
+            valid_childs.add(new AStarNode(new_position, this.objective, new_path, this.path_cost + 1 + extra_cost));
         }
 
         return valid_childs;
@@ -158,6 +173,20 @@ public class AStarNode implements Comparable<AStarNode>{
     public ArrayList<GridPosition> get_path_to_position(){
         return this.path_to_position;
     }
+
+    public int get_path_cost(){
+        return this.path_cost;
+    }
+
+    /**
+     * Para que el HashSet sobre AStarNode funcione bien. Se apoya directamente
+     * en el @Override del GridPosition
+     * */
+    @Override
+    public int hashCode(){
+        return this.position.hashCode();
+    }
+
 
 
 }

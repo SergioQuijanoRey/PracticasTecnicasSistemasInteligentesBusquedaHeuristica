@@ -545,6 +545,9 @@ public class Agent extends core.player.AbstractPlayer{
      * */
     ArrayList<GridPosition> a_star(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
 
+        // TODO -- Sergio -- Borrar mensajes por pantalla
+        System.out.println("==> Lanzando A*");
+
         // No tenemos objetivo, por lo que tenemos que decidir a donde nos queremos
         // dirigir
         if(this.current_objective == null){
@@ -557,18 +560,14 @@ public class Agent extends core.player.AbstractPlayer{
         PriorityQueue<AStarNode> open = new PriorityQueue<AStarNode>();
 
         // Conjunto de posiciones cerradas
-        // Le heuristica que vamos a usar es admisible. Esto, junto a que todas
-        // las acciones tienen el mismo coste (no hay tipos de suelo que modifiquen
-        // los costes), hace que no tengamos que modificar el conjunto de cerrados
-        // TODO -- Sergio -- Asegurarme de que esto que estoy diciendo es correcto
-        HashSet<GridPosition> closed = new HashSet<GridPosition>();
+        HashSet<AStarNode> closed = new HashSet<AStarNode>();
 
-
-        // Para arrancar, el nodo asociado a la posicion inicial (la posicion del jugador)
-        // es añadido al conjunto de abiertos
+        // Posiciones de partida y de llegada
         GridPosition start_position = new GridPosition(stateObs.getAvatarPosition(), stateObs);
         GridPosition objective_position = new GridPosition(this.current_objective, stateObs);
-        open.add(new AStarNode(start_position, objective_position, new ArrayList<GridPosition>()));
+
+        // Añadimos la posicion de partida al conjunto de abiertos
+        open.add(new AStarNode(start_position, objective_position, new ArrayList<GridPosition>(), 0));
 
         while(open.isEmpty() == false){
             // Tomo el siguiente elemento de abiertos. Esto es, el elemento mas
@@ -576,22 +575,9 @@ public class Agent extends core.player.AbstractPlayer{
             // hace que el nodo salga del conjunto de abiertos
             AStarNode current = open.poll();
 
-            // Compruebo si el abierto estaba en cerrados. No estoy actualizando
-            // el conjunto de abiertos cuando encuentro un mejor camino a un abierto
-            // Asi que si el nodo extraido esta en cerrados, es porque hemos explorado
-            // un mejor camino hasta este nodo. Esto tambien gracias a que la
-            // heuristica es admisible, y por tanto, cuando saco por primera vez
-            // el nodo, es el mejor camino a ese nodo
-            if(closed.contains(current.get_position())){
-                continue;
-            }
-
-            // El elemento pasa de abiertos a cerrados. Como trabajamos con posiciones
-            // solo metemos la posicion, no toda la estructura de nodo
-            closed.add(current.get_position());
-
-            // Compruebo si la posicion actual es la posicion objetivo
-            if(current.get_position().x == objective_position.x && current.get_position().y == objective_position.y){
+            // Compruebo si la posicion actual es la posicion objetivo, lo que pararia
+            // la iteracion antes de realizar mas operaciones y devuelve la solucion
+            if(current.position.equals(objective_position)){
                 // Hemos encontrado la solucion. Devuelvo el path al nodo actual
                 // juntandole este nodo
                 ArrayList<GridPosition> solution_path = current.get_path_to_position();
@@ -604,30 +590,67 @@ public class Agent extends core.player.AbstractPlayer{
                 return solution_path;
             }
 
+
             // Expando el nodo actual y paso los hijos del nodo al conjunto de abiertos
             // en caso de que la posicion que representa el nodo hijo no haya sido
             // ya explorada
             ArrayList<AStarNode> childs = current.generate_childs(stateObs, this.inmovable_grid_positions, this.world_dimensions_grid);
             for(AStarNode child: childs){
-
-                // Si el nodo ya ha sido explorado, no hacemos nada mas
-                boolean child_already_explored = closed.contains(child.get_position());
-                if(child_already_explored == true){
+                // Hijo coincide con el padre, asi que no hacemos comprobaciones, no se considera
+                // TODO -- Sergio -- Creo que como genero los hijos esto no puede pasar
+                // asi que borrar este if
+                if(child.position.equals(current.position)){
                     continue;
                 }
 
-                open.add(child);
+                // Hemos encontrado un mejor camino a una posicion del mapa (posicion
+                // del mapa ya explorada pero encontramos un camino de menor coste)
+                // Asi que sacamos la posicion de cerrados y la metemos en abiertos,
+                // esta vez con el mejor coste
+                // Este contains comprueba que coincidan en las posiciones del mapa
+                // que representan, como se puede ver en AStarNode.hashCode()
+                if(closed.contains(child)){
+                    // Tomo el nodo de cerrados cuya GridPosition coincide con la del nodo child
+                    AStarNode node_already_in_closed = getNodeFromClosedWithGridPosition(closed, child.position);
+
+                    if(child.get_path_cost() < node_already_in_closed.get_path_cost()){
+                        closed.remove(node_already_in_closed);
+                        open.add(child);
+                    }
+                }
 
             }
-        }
 
-        System.out.println("No hemos encontrado el objetivo, porque nos hemos quedado sin abiertos");
+            // El elemento pasa de abiertos a cerrados. Como trabajamos con posiciones
+            // solo metemos la posicion, no toda la estructura de nodo
+            closed.add(current);
+        }
 
         // La busqueda ha terminado porque hemos agotado los nodos de la lista de abiertos,
         // no porque hayamos encontrado el objetivo. Ha fracasado la busqueda, asi que
         // devolvemos un ArrayList vacio para representar este hecho
         return new ArrayList<GridPosition>();
-
     }
 
+    /**
+     * Funcion auxiliar para encontrar el nodo de cerrados que representa una determinada
+     * posicion.
+     *
+     * @param closed conjunto de nodos cerrados
+     * @param position posicion con la que hacemos las comprobaciones
+     * @pre debe comprobarse previamente que exista el nodo buscado. En otro caso
+     * se devuelve null
+     * @return el AStarNode cuya posicion es position
+     * */
+    AStarNode getNodeFromClosedWithGridPosition(HashSet<AStarNode> closed, GridPosition position){
+        for(AStarNode current_node : closed){
+            if(current_node.get_position().equals(position)){
+                return current_node;
+            }
+        }
+
+        // No se ha encontrado el nodo, se devuelve null
+        // Esto no deberia pasar por las precondiciones
+        return null;
+    }
 }
