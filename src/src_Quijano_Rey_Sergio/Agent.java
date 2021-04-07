@@ -213,17 +213,16 @@ public class Agent extends core.player.AbstractPlayer{
             return this.return_buffered_action();
         }
 
-        // No tenemos plan, primero calculamos el objetivo porque podemos tener
-        // un objetivo desactualizado, asi que lo actualizamos antes de calcular
-        // un nuevo plan
-        if(this.plan == null || this.plan.size() == 0){
-            this.choose_objective(stateObs, elapsedTimer);
-        }
-
-
         // No tenemos un plan construido, hay que generarlo
         if(this.plan == null || this.plan.size() == 0){
             this.plan = this.a_star(stateObs, elapsedTimer);
+
+            // Comprobamos que no hayamos generado un plan vacio. En tal caso,
+            // devolvemos accion nula para que el programa no explote al hacer
+            // un this.plan.get(0)
+            if(this.plan == null || this.plan.size() == 0) {
+                return Types.ACTIONS.ACTION_NIL;
+            }
         }
 
         // Extraemos la siguiente posicion del mapa a la que nos tenemos que dirigir
@@ -402,8 +401,6 @@ public class Agent extends core.player.AbstractPlayer{
      * TODO -- Sergio -- Queda por implementar para otros niveles
      * */
     void choose_objective(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        System.out.println("==> Calculando nuevo objetivo");
-
         if(this.current_level == 1){
             this.choose_objective_as_closest_portal(stateObs, elapsedTimer);
         }else if(this.current_level >= 2){
@@ -455,6 +452,7 @@ public class Agent extends core.player.AbstractPlayer{
      * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
      * */
     void choose_objective_as_closest_gem(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        System.out.println("==============> Calculando la gema mas cercana");
         // Posicion del jugador
         // La tomamos para poder hacer la llamada que nos devuelve las gemas
         // ordenados por distancia ascendente a la referencia que pasemos
@@ -518,6 +516,10 @@ public class Agent extends core.player.AbstractPlayer{
                 break;
             }
         }
+
+        // Como hemos encontrado la solucion, borramos el objetivo actual para que
+        // en la siguiente busqueda se elija el siguiente objetivo
+        this.current_objective = null;
 
         System.out.println("A* mal devuelve: " + solution);
         return solution;
