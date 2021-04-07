@@ -611,14 +611,37 @@ public class Agent extends core.player.AbstractPlayer{
                 // que representan, como se puede ver en AStarNode.hashCode()
                 if(closed.contains(child)){
                     // Tomo el nodo de cerrados cuya GridPosition coincide con la del nodo child
-                    AStarNode node_already_in_closed = getNodeFromClosedWithGridPosition(closed, child.position);
+                    AStarNode node_already_in_closed = getNodeFromClosedReferencedByGridPosition(closed, child.position);
 
                     if(child.get_path_cost() < node_already_in_closed.get_path_cost()){
                         closed.remove(node_already_in_closed);
                         open.add(child);
+                        continue;
                     }
                 }
 
+                // Este nodo no ha sido visitado, asi que lo añadimos al conjunto de
+                // abiertos. Recordar de nuevo que contains comprueba las posiciones
+                // del mapa, no comprueba otros metadatos del nodo (como el coste acumulado,
+                // la orientacion del padre...)
+                if(closed.contains(child) == false && open.contains(child) == false){
+                    open.add(child);
+                    continue;
+                }
+
+                // La posicion estaba en abiertos (de nuevo, solo comprobamos posiciones)
+                // Si este hijo tiene mejor coste a esa posicion, actualizamos el
+                // elemento de abiertos para quedarnos con el mejor camino hasta esa posicion
+                if(open.contains(child)){
+                    AStarNode node_already_in_open = getNodeFromOpenReferencedByGridPosition(open, child.position);
+                    if(child.get_path_cost() < node_already_in_open.get_path_cost()){
+                        // Actualizamos, child tiene mejor coste que el nodo que ya
+                        // estaba en abiertos
+                        open.remove(node_already_in_open);
+                        open.add(child);
+                        continue;
+                    }
+                }
             }
 
             // El elemento pasa de abiertos a cerrados. Como trabajamos con posiciones
@@ -636,14 +659,44 @@ public class Agent extends core.player.AbstractPlayer{
      * Funcion auxiliar para encontrar el nodo de cerrados que representa una determinada
      * posicion.
      *
-     * @param closed conjunto de nodos cerrados
+     * @param node_set conjunto de nodos cerrados en un HashSet
      * @param position posicion con la que hacemos las comprobaciones
      * @pre debe comprobarse previamente que exista el nodo buscado. En otro caso
      * se devuelve null
      * @return el AStarNode cuya posicion es position
+     *
+     * TODO -- Sergio -- Usar otro tipo de estructura de datos distinta a HashSet para
+     * que esta busqueda sea mejor que O(n)
      * */
-    AStarNode getNodeFromClosedWithGridPosition(HashSet<AStarNode> closed, GridPosition position){
-        for(AStarNode current_node : closed){
+    AStarNode getNodeFromClosedReferencedByGridPosition(HashSet<AStarNode> node_set, GridPosition position){
+        for(AStarNode current_node : node_set){
+            if(current_node.get_position().equals(position)){
+                return current_node;
+            }
+        }
+
+        // No se ha encontrado el nodo, se devuelve null
+        // Esto no deberia pasar por las precondiciones
+        return null;
+    }
+
+    /**
+     * Funcion auxiliar para encontrar el nodo de cerrados que representa una determinada
+     * posicion.
+     *
+     * @param node_set conjunto de nodos abiertos en un PriorityQueue
+     * @param position posicion con la que hacemos las comprobaciones
+     * @pre debe comprobarse previamente que exista el nodo buscado. En otro caso
+     * se devuelve null
+     * @return el AStarNode cuya posicion es position
+     *
+     * TODO -- Sergio -- Usar otro tipo de estructura de datos distinta a HashSet para
+     * que esta busqueda sea mejor que O(n)
+     *
+     * TODO -- Sergio -- Refactorizar para juntar con el metodo getNodeFromClosedReferencedByGridPosition
+     * */
+    AStarNode getNodeFromOpenReferencedByGridPosition(PriorityQueue<AStarNode> node_set, GridPosition position){
+        for(AStarNode current_node : node_set){
             if(current_node.get_position().equals(position)){
                 return current_node;
             }
