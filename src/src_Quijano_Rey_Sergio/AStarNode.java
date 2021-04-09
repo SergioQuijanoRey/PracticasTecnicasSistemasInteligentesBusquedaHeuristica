@@ -12,6 +12,7 @@ import tools.Vector2d;
 
 // Mis tipos de datos auxiliares
 import src_Quijano_Rey_Sergio.GridPosition;
+import src_Quijano_Rey_Sergio.Orientation;
 
 /**
  * Clase que representa un nodo para la busqueda en A*.
@@ -46,13 +47,20 @@ public class AStarNode implements Comparable<AStarNode>{
     int path_cost;
 
     /**
+     * Orientacion del jugador. Necesitamos guardar este estado porque los cambios
+     * de orientacion influyen en los costes.
+     * */
+    Orientation orientation;
+
+    /**
      * Constructor
      * */
-    AStarNode(GridPosition position, GridPosition objective, ArrayList<GridPosition> path_to_position, int path_cost){
+    AStarNode(GridPosition position, GridPosition objective, ArrayList<GridPosition> path_to_position, int path_cost, Orientation orientation){
         this.position = position;
         this.objective = objective;
         this.path_to_position = path_to_position;
         this.path_cost = path_cost;
+        this.orientation = orientation;
     }
 
     /**
@@ -99,6 +107,9 @@ public class AStarNode implements Comparable<AStarNode>{
             int new_y = this.position.y + y_delta;
             GridPosition new_position = new GridPosition(new_x, new_y);
 
+            // Orientacion resultante de movernos del nodo actual al nodo hijo
+            Orientation new_orientation = new Orientation(new_position.minus(this.position));
+
             // Comprobamos que no nos salgamos por la izquierda o por arriba
             // del mapa
             if(new_x < 0 || new_y < 0){
@@ -120,10 +131,16 @@ public class AStarNode implements Comparable<AStarNode>{
             // TODO -- Sergio -- calcular coste añadido de cambiar de direccion
             // porque ahora no estamos haciendo nada
             int extra_cost = 0;
+            if(this.orientation.equals(new_orientation) == false){
+                extra_cost = 1;
+            }
+            // TODO -- Sergio -- Borrar esto porque estoy haciendo inefectivo el
+            // calculo de costes extras
+            extra_cost = 0;
 
             // Todas las condiciones son validas, asi que añado el nodo a la
             // lista de hijos validos
-            valid_childs.add(new AStarNode(new_position, this.objective, new_path, this.path_cost + 1 + extra_cost));
+            valid_childs.add(new AStarNode(new_position, this.objective, new_path, this.path_cost + 1 + extra_cost, new_orientation));
         }
 
         return valid_childs;

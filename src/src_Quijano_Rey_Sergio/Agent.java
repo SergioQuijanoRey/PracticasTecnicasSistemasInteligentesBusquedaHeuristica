@@ -566,8 +566,11 @@ public class Agent extends core.player.AbstractPlayer{
         GridPosition start_position = new GridPosition(stateObs.getAvatarPosition(), stateObs);
         GridPosition objective_position = new GridPosition(this.current_objective, stateObs);
 
+        // Orientacion de la que parte el avatar
+        Orientation starting_orientation = new Orientation(stateObs.getAvatarOrientation());
+
         // Añadimos la posicion de partida al conjunto de abiertos
-        open.add(new AStarNode(start_position, objective_position, new ArrayList<GridPosition>(), 0));
+        open.add(new AStarNode(start_position, objective_position, new ArrayList<GridPosition>(), 0, starting_orientation));
 
         while(open.isEmpty() == false){
             // Tomo el siguiente elemento de abiertos. Esto es, el elemento mas
