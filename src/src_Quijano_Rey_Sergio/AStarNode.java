@@ -77,8 +77,6 @@ public class AStarNode implements Comparable<AStarNode>{
      * el calculo de estas posiciones
      * @param world_dimensions_grid dimensiones en posiciones grid del mapa, para
      * saber si las posiciones con las que trabajamos estan o no dentro del mapa
-     *
-     * TODO -- Sergio -- añadir el coste de cambiar de sentido
      * */
     public ArrayList<AStarNode> generate_childs(StateObservation stateObs, HashSet<GridPosition> inmovable_grid_positions, GridPosition world_dimensions_grid){
         // Todos los hijos tienen como path el path del padre mas en nodo padre
@@ -147,7 +145,7 @@ public class AStarNode implements Comparable<AStarNode>{
      * al objetivo
      * */
     int heuristic_value(){
-        return this.path_to_position.size() + GridPosition.manhattan_distance(this.position, this.objective);
+        return this.path_cost + GridPosition.manhattan_distance(this.position, this.objective);
     }
 
     /**
@@ -198,7 +196,4 @@ public class AStarNode implements Comparable<AStarNode>{
     public int hashCode(){
         return this.position.hashCode();
     }
-
-
-
 }

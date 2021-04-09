@@ -545,9 +545,6 @@ public class Agent extends core.player.AbstractPlayer{
      * */
     ArrayList<GridPosition> a_star(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
 
-        // TODO -- Sergio -- Borrar mensajes por pantalla
-        System.out.println("==> Lanzando A*");
-
         // No tenemos objetivo, por lo que tenemos que decidir a donde nos queremos
         // dirigir
         if(this.current_objective == null){
@@ -599,7 +596,6 @@ public class Agent extends core.player.AbstractPlayer{
             // ya explorada
             ArrayList<AStarNode> childs = current.generate_childs(stateObs, this.inmovable_grid_positions, this.world_dimensions_grid);
             for(AStarNode child: childs){
-                System.out.println("__> Iterando en A*");
                 // Hijo coincide con el padre, asi que no hacemos comprobaciones, no se considera
                 // TODO -- Sergio -- Creo que como genero los hijos esto no puede pasar
                 // asi que borrar este if
