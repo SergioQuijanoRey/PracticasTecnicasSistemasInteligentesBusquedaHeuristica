@@ -128,15 +128,10 @@ public class AStarNode implements Comparable<AStarNode>{
             }
 
             // Coste extra derivado de cambiar de direccion
-            // TODO -- Sergio -- calcular coste añadido de cambiar de direccion
-            // porque ahora no estamos haciendo nada
             int extra_cost = 0;
             if(this.orientation.equals(new_orientation) == false){
                 extra_cost = 1;
             }
-            // TODO -- Sergio -- Borrar esto porque estoy haciendo inefectivo el
-            // calculo de costes extras
-            extra_cost = 0;
 
             // Todas las condiciones son validas, asi que añado el nodo a la
             // lista de hijos validos
