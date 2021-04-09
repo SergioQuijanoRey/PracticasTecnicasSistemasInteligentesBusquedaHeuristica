@@ -100,13 +100,13 @@ public class AStarNode implements Comparable<AStarNode>{
             int x_delta = delta[0];
             int y_delta = delta[1];
 
+            // Orientacion asociada al delta que aplicamos
+            Orientation new_orientation = new Orientation(new GridPosition(x_delta, y_delta));
+
             // Posicion resultante de aplicar los deltas
             int new_x = this.position.x + x_delta;
             int new_y = this.position.y + y_delta;
             GridPosition new_position = new GridPosition(new_x, new_y);
-
-            // Orientacion resultante de movernos del nodo actual al nodo hijo
-            Orientation new_orientation = new Orientation(new_position.minus(this.position));
 
             // Comprobamos que no nos salgamos por la izquierda o por arriba
             // del mapa
@@ -131,9 +131,12 @@ public class AStarNode implements Comparable<AStarNode>{
                 extra_cost = 1;
             }
 
+            // Coste del nodo hijo
+            int new_cost = this.path_cost + 1 + extra_cost;
+
             // Todas las condiciones son validas, asi que añado el nodo a la
             // lista de hijos validos
-            valid_childs.add(new AStarNode(new_position, this.objective, new_path, this.path_cost + 1 + extra_cost, new_orientation));
+            valid_childs.add(new AStarNode(new_position, this.objective, new_path, new_cost, new_orientation));
         }
 
         return valid_childs;
@@ -145,6 +148,8 @@ public class AStarNode implements Comparable<AStarNode>{
      * al objetivo
      * */
     int heuristic_value(){
+        // TODO -- Sergio -- cambiando esto por this.path_to_position.size() soluciona
+        // el comportamiento erratico del agente
         return this.path_cost + GridPosition.manhattan_distance(this.position, this.objective);
     }
 

@@ -587,9 +587,10 @@ public class Agent extends core.player.AbstractPlayer{
                 // busqueda se escoja el siguiente objetivo
                 this.current_objective = null;
 
+                System.out.println("A* acierta");
+
                 return solution_path;
             }
-
 
             // Expando el nodo actual y paso los hijos del nodo al conjunto de abiertos
             // en caso de que la posicion que representa el nodo hijo no haya sido
@@ -652,6 +653,7 @@ public class Agent extends core.player.AbstractPlayer{
         // La busqueda ha terminado porque hemos agotado los nodos de la lista de abiertos,
         // no porque hayamos encontrado el objetivo. Ha fracasado la busqueda, asi que
         // devolvemos un ArrayList vacio para representar este hecho
+        System.out.println("A* falla");
         return new ArrayList<GridPosition>();
     }
 

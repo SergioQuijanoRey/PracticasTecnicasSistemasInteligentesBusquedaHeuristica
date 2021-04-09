@@ -58,7 +58,6 @@ public class Orientation{
         if(orientation.y > 0){
             this.down = true;
         }
-
     }
 
     // Getter para saber si tenemos una u otra orientacion
@@ -93,6 +92,53 @@ public class Orientation{
         // Casteamos y devolvemos la igualdad que queremos
         Orientation other = (Orientation) o;
         return this.up == other.up && this.down == other.down && this.left == other.left && this.right == other.right;
+    }
+
+    @Override
+    public String toString(){
+        if(this.left){
+            return "Izquierda";
+        }
+
+        if(this.right){
+            return "Derecha";
+        }
+
+        if(this.up){
+            return "Arriba";
+        }
+
+        if(this.down){
+            return "Abajo";
+        }
+
+        return "Sin orientacion";
+    }
+
+    /**
+     * Comprueba si la orientacion es valida. Para debuggear el codigo. El proyecto
+     * final no usa esta utilidad.
+     * */
+    boolean check_valid(){
+        int activated_orientations = 0;
+        if(this.left){
+            activated_orientations = activated_orientations + 1;
+        }
+
+        if(this.right){
+            activated_orientations = activated_orientations + 1;
+        }
+
+        if(this.up){
+            activated_orientations = activated_orientations + 1;
+        }
+
+        if(this.down){
+            activated_orientations = activated_orientations + 1;
+        }
+
+
+        return activated_orientations == 0 || activated_orientations == 1;
     }
 
 }
