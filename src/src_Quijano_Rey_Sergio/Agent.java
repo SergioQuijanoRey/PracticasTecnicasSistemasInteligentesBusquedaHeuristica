@@ -30,10 +30,12 @@ import java.lang.Exception;
 import java.util.PriorityQueue;
 import java.util.HashSet;
 import java.awt.Dimension;
+import java.util.Collections;   // Para iterar y tomar valores minimos
 
 // Tipos de datos auxiliares que he programado
 import src_Quijano_Rey_Sergio.GridPosition;
 import src_Quijano_Rey_Sergio.AStarNode;
+import src_Quijano_Rey_Sergio.AStarNodeComparator;
 import src_Quijano_Rey_Sergio.Orientation;
 
 /**
@@ -446,6 +448,9 @@ public class Agent extends core.player.AbstractPlayer{
 
     /**
      * Establece la gema mas cercano al jugador como objetivo actual.
+     * Cuidado con la cercania, porque GVGAI devuelve un array con las gemas ordenadas por distancia,
+     * pero usando la distancia euclidea. Asi que hay que hacer las comprobaciones de las distancias
+     * a mano computando la distancia manhattan
      *
      * @param stateObs estado del mundo
      * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
@@ -453,76 +458,27 @@ public class Agent extends core.player.AbstractPlayer{
      * */
     void choose_objective_as_closest_gem(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         System.out.println("==============> Calculando la gema mas cercana");
-        // Posicion del jugador
-        // La tomamos para poder hacer la llamada que nos devuelve las gemas
-        // ordenados por distancia ascendente a la referencia que pasemos
+        // Posicion del jugador. Para hacer la comparacion con las posiciones de las gemas
+        // Usamos gridposition para la distancia manhattan de forma sencilla
         Vector2d player_position = stateObs.getAvatarPosition();
+        GridPosition player_grid_position = new GridPosition(player_position, stateObs);
 
-        // Tomamos las posiciones de las gemas
-        ArrayList<Observation>[] gems = stateObs.getResourcesPositions(player_position);
+        // Gemas actuales del mundo. Hacemos esto para no tener que hacer recalculos
+        ArrayList<Observation> curr_gems = stateObs.getResourcesPositions()[0];
 
-        // Establezco la localizacion del portal mas cercano como objetivo
-        // Se devuelve un array de arraylist, por eso tenemos que usar dos veces
-        // el indice cero
-        this.current_objective = gems[0].get(0).position;
-    }
-
-    ArrayList<GridPosition> a_star_mal(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        System.out.println("Lanzo A* mal");
-
-        // No tenemos objetivo, por lo que tenemos que decidir a donde nos queremos
-        // dirigir
-        if(this.current_objective == null){
-            this.choose_objective(stateObs, elapsedTimer);
+        // Iteramos sobre las gemas calculando las distancias
+        ArrayList<Integer> manhattan_distances = new ArrayList<Integer>();
+        for(Observation gem: curr_gems){
+            GridPosition gem_grid_position = new GridPosition(gem.position, stateObs);
+            Integer curr_distance = GridPosition.manhattan_distance(player_grid_position, gem_grid_position);
+            manhattan_distances.add(curr_distance);
         }
 
-        // Para arrancar, el nodo asociado a la posicion inicial (la posicion del jugador)
-        // es añadido al conjunto de abiertos
-        GridPosition current_position = new GridPosition(stateObs.getAvatarPosition(), stateObs);
-        GridPosition objective_position = new GridPosition(this.current_objective, stateObs);
+        // Tomo el indice de la gema que esta mas cercana con la distancia manhattan
+        int index_of_closest_gem = manhattan_distances.indexOf(Collections.min(manhattan_distances));
 
-        // Solucion que vamos a devolver
-        ArrayList<GridPosition> solution = new ArrayList<>();
-
-        while(true){
-            System.out.println("Itero, estoy en " + current_position.toString() + " y quiero llegar a " + objective_position.toString());
-
-            // Primero nos movemos en el eje horizontal
-            if(objective_position.minus(current_position).getX() > 0) {
-                current_position = current_position.plus(new GridPosition(1, 0));
-                solution.add(current_position);
-                continue;
-            }
-            if(objective_position.minus(current_position).getX() < 0) {
-                current_position = current_position.plus(new GridPosition(-1, 0));
-                solution.add(current_position);
-                continue;
-            }
-
-            // Despues nos movemos en el eje vertical
-            if(objective_position.minus(current_position).getY() > 0) {
-                current_position = current_position.plus(new GridPosition(0, 1));
-                solution.add(current_position);
-                continue;
-            }
-            if(objective_position.minus(current_position).getY() < 0) {
-                current_position = current_position.plus(new GridPosition(0, -1));
-                solution.add(current_position);
-                continue;
-            }
-
-            // Compruebo si hemos llegado a la solucion, en cuyo caso dejamos de iterar
-            if(current_position.equals(objective_position)){
-                break;
-            }
-        }
-
-        // Como hemos encontrado la solucion, borramos el objetivo actual para que
-        // en la siguiente busqueda se elija el siguiente objetivo
-        this.current_objective = null;
-
-        System.out.println("A* mal devuelve: " + solution);
-        return solution;
+        // Establecemos la gema como objetivo actual
+        this.current_objective = curr_gems.get(index_of_closest_gem).position;
     }
 
     /**
@@ -554,10 +510,10 @@ public class Agent extends core.player.AbstractPlayer{
         // Conjunto de posiciones abiertas
         // Es un conjunto ordenado segun la suma de coste acumulado de la posicion
         // y la distancia manhattan al objetivo
-        PriorityQueue<AStarNode> open = new PriorityQueue<AStarNode>();
+        PriorityQueue<AStarNode> open = new PriorityQueue<AStarNode>(new AStarNodeComparator());
 
         // Conjunto de posiciones cerradas
-        HashSet<AStarNode> closed = new HashSet<AStarNode>();
+        ArrayList<AStarNode> closed = new ArrayList<AStarNode>();
 
         // Posiciones de partida y de llegada
         GridPosition start_position = new GridPosition(stateObs.getAvatarPosition(), stateObs);
@@ -634,6 +590,7 @@ public class Agent extends core.player.AbstractPlayer{
                 // Si este hijo tiene mejor coste a esa posicion, actualizamos el
                 // elemento de abiertos para quedarnos con el mejor camino hasta esa posicion
                 if(open.contains(child)){
+                    System.out.println("==> El conjunto de abiertos ya contiene a este abierto");
                     AStarNode node_already_in_open = getNodeByGridPosition(open, child.get_position());
                     if(child.get_path_cost() < node_already_in_open.get_path_cost()){
                         // Actualizamos, child tiene mejor coste que el nodo que ya
