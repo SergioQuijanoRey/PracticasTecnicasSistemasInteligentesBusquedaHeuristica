@@ -21,7 +21,7 @@ import src_Quijano_Rey_Sergio.Orientation;
  * @author Sergio Quijano Rey
  *
  * */
-public class AStarNode implements Comparable<AStarNode>{
+public class AStarNode{
     /**
      * Posicion del mapa que representa este nodo
      * */
@@ -153,28 +153,6 @@ public class AStarNode implements Comparable<AStarNode>{
         return this.path_cost + GridPosition.manhattan_distance(this.position, this.objective);
     }
 
-    /**
-     * Compara dos nodos.
-     * Lo hacemos para que se induzca una ordenacion ascendente por el valor
-     * heuristico (primero el de menor valor)
-     */
-    @Override
-    public int compareTo(AStarNode other){
-        int heuristic_first = this.heuristic_value();
-        int heuristic_second = other.heuristic_value();
-
-        if(heuristic_first > heuristic_second){
-            return 1;
-        }
-
-        if(heuristic_first < heuristic_second){
-            return -1;
-        }
-
-        // Ambos tienen mismo valor heuristico
-        return 0;
-    }
-
     // Getters basicos
     //==========================================================================
     public GridPosition get_position(){
@@ -191,14 +169,5 @@ public class AStarNode implements Comparable<AStarNode>{
 
     public int get_path_cost(){
         return this.path_cost;
-    }
-
-    /**
-     * Para que el HashSet sobre AStarNode funcione bien. Se apoya directamente
-     * en el @Override del GridPosition
-     * */
-    @Override
-    public int hashCode(){
-        return this.position.hashCode();
     }
 }
