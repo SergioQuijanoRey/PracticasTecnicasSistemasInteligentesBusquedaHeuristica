@@ -12,10 +12,10 @@ import src_Quijano_Rey_Sergio.GridPosition;
  * */
 public class Orientation{
     // Cuatro orientaciones, solo una puede ser true
-    boolean left = false;
-    boolean right = false;
-    boolean down = false;
-    boolean up = false;
+    private boolean left = false;
+    private boolean right = false;
+    private boolean down = false;
+    private boolean up = false;
 
     /**
      * @param orientation orientacion de GVGAI en formato Vector2d
@@ -43,19 +43,19 @@ public class Orientation{
      * Util cuando calculamos cambios entre un GridPosition y otro
      * */
     Orientation(GridPosition orientation){
-        if(orientation.x < 0){
+        if(orientation.getX() < 0){
             this.left = true;
         }
 
-        if(orientation.x > 0){
+        if(orientation.getX() > 0){
             this.right = true;
         }
 
-        if(orientation.y < 0){
+        if(orientation.getY() < 0){
             this.up = true;
         }
 
-        if(orientation.y > 0){
+        if(orientation.getY() > 0){
             this.down = true;
         }
     }

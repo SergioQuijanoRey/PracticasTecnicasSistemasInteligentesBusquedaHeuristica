@@ -52,7 +52,7 @@ public class Agent extends core.player.AbstractPlayer{
      *
      * Cuando current_level = -1, tenemos que calcular el nivel en el que estamos
      * */
-    int current_level = -1;
+    private int current_level = -1;
 
     /**
      * Plan construido para ir al objetivo actual.
@@ -61,7 +61,7 @@ public class Agent extends core.player.AbstractPlayer{
      * Trabajamos con posiciones en el mapa, que convertiremos a acciones para
      * pasar de una posicion a otra
      * */
-    ArrayList<GridPosition> plan = null;
+    private ArrayList<GridPosition> plan = null;
 
     /**
      * Objetivo actual a perseguir.
@@ -69,32 +69,32 @@ public class Agent extends core.player.AbstractPlayer{
      * Cuando current_objective = null, no tenemos objetivo y tendremos que decidir
      * cual queremos que sea nuestro siguiente objetivo
      * */
-    Vector2d current_objective = null;
+    private Vector2d current_objective = null;
 
     /**
      * Buffer de acciones a realizar. Esto se usa porque en ocasiones, para movernos
      * de una GridPosition a otra, necesitamos ejecutar mas de una accion (cambio
      * de sentido)
      * */
-    ArrayList<Types.ACTIONS> action_buffer = null;
+    private ArrayList<Types.ACTIONS> action_buffer = null;
 
     /**
      * Numero de gemas que hay que conseguir en ciertos niveles para escapar por
      * el portal
      * */
-    int number_of_gems_to_get = 9;
+    private int number_of_gems_to_get = 9;
 
     /**
      * Dimensiones del mundo. Para saber donde estan los extremos del mapa
      * */
-    GridPosition world_dimensions_grid = null;
+    private GridPosition world_dimensions_grid = null;
 
     /**
      * Posiciones inamovibles (muros) del mapa.
      * Estas posiciones no se modifican a lo largo del juego asi que se calculan
      * una unica vez
      * */
-    HashSet<GridPosition> inmovable_grid_positions = null;
+    private HashSet<GridPosition> inmovable_grid_positions = null;
 
     /**
      * Constructor del agente.
@@ -290,28 +290,28 @@ public class Agent extends core.player.AbstractPlayer{
         // horizontales. Esto deberia dar igual pues en la planificacion no consideramos
         // movimientos diagonales en el grid
         // TODO -- Sergio -- Comprobar que esto este bien
-        if(movement.x < 0){
+        if(movement.getX() < 0){
             this.action_buffer.add(Types.ACTIONS.ACTION_LEFT);
 
             // Mala orientacion, tenemos que realizar dos acciones
             if(orientation.isLookingLeft() == false){
                 this.action_buffer.add(Types.ACTIONS.ACTION_LEFT);
             }
-        }else if(movement.x > 0){
+        }else if(movement.getX() > 0){
             this.action_buffer.add(Types.ACTIONS.ACTION_RIGHT);
 
             // Mala orientacion, tenemos que realizar dos acciones
             if(orientation.isLookingRight() == false){
                 this.action_buffer.add(Types.ACTIONS.ACTION_RIGHT);
             }
-        }else if(movement.y > 0){
+        }else if(movement.getY() > 0){
             this.action_buffer.add(Types.ACTIONS.ACTION_DOWN);
 
             // Mala orientacion, tenemos que realizar dos acciones
             if(orientation.isLookingDown() == false){
                 this.action_buffer.add(Types.ACTIONS.ACTION_DOWN);
             }
-        }else if(movement.y < 0){
+        }else if(movement.getY() < 0){
             this.action_buffer.add(Types.ACTIONS.ACTION_UP);
 
             // Mala orientacion, tenemos que realizar dos acciones
@@ -488,24 +488,24 @@ public class Agent extends core.player.AbstractPlayer{
             System.out.println("Itero, estoy en " + current_position.toString() + " y quiero llegar a " + objective_position.toString());
 
             // Primero nos movemos en el eje horizontal
-            if(objective_position.minus(current_position).x > 0) {
+            if(objective_position.minus(current_position).getX() > 0) {
                 current_position = current_position.plus(new GridPosition(1, 0));
                 solution.add(current_position);
                 continue;
             }
-            if(objective_position.minus(current_position).x < 0) {
+            if(objective_position.minus(current_position).getX() < 0) {
                 current_position = current_position.plus(new GridPosition(-1, 0));
                 solution.add(current_position);
                 continue;
             }
 
             // Despues nos movemos en el eje vertical
-            if(objective_position.minus(current_position).y > 0) {
+            if(objective_position.minus(current_position).getY() > 0) {
                 current_position = current_position.plus(new GridPosition(0, 1));
                 solution.add(current_position);
                 continue;
             }
-            if(objective_position.minus(current_position).y < 0) {
+            if(objective_position.minus(current_position).getY() < 0) {
                 current_position = current_position.plus(new GridPosition(0, -1));
                 solution.add(current_position);
                 continue;
@@ -577,7 +577,7 @@ public class Agent extends core.player.AbstractPlayer{
 
             // Compruebo si la posicion actual es la posicion objetivo, lo que pararia
             // la iteracion antes de realizar mas operaciones y devuelve la solucion
-            if(current.position.equals(objective_position)){
+            if(current.get_position().equals(objective_position)){
                 // Hemos encontrado la solucion. Devuelvo el path al nodo actual
                 // juntandole este nodo
                 ArrayList<GridPosition> solution_path = current.get_path_to_position();
@@ -600,7 +600,7 @@ public class Agent extends core.player.AbstractPlayer{
                 // Hijo coincide con el padre, asi que no hacemos comprobaciones, no se considera
                 // TODO -- Sergio -- Creo que como genero los hijos esto no puede pasar
                 // asi que borrar este if
-                if(child.position.equals(current.position)){
+                if(child.get_position().equals(current.get_position())){
                     continue;
                 }
 
@@ -612,7 +612,7 @@ public class Agent extends core.player.AbstractPlayer{
                 // que representan, como se puede ver en AStarNode.hashCode()
                 if(closed.contains(child)){
                     // Tomo el nodo de cerrados cuya GridPosition coincide con la del nodo child
-                    AStarNode node_already_in_closed = getNodeByGridPosition(closed, child.position);
+                    AStarNode node_already_in_closed = getNodeByGridPosition(closed, child.get_position());
 
                     if(child.get_path_cost() < node_already_in_closed.get_path_cost()){
                         closed.remove(node_already_in_closed);
@@ -634,7 +634,7 @@ public class Agent extends core.player.AbstractPlayer{
                 // Si este hijo tiene mejor coste a esa posicion, actualizamos el
                 // elemento de abiertos para quedarnos con el mejor camino hasta esa posicion
                 if(open.contains(child)){
-                    AStarNode node_already_in_open = getNodeByGridPosition(open, child.position);
+                    AStarNode node_already_in_open = getNodeByGridPosition(open, child.get_position());
                     if(child.get_path_cost() < node_already_in_open.get_path_cost()){
                         // Actualizamos, child tiene mejor coste que el nodo que ya
                         // estaba en abiertos

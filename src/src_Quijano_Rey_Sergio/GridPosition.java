@@ -22,8 +22,9 @@ import core.game.StateObservation;
  * va a mejorar el rendimiento de los algorimtos
  * */
 public class GridPosition{
-    int x;
-    int y;
+    // Las coordenadas en el Grid
+    private int x;
+    private int y;
 
     /**
      * Constructor por defecto
@@ -82,6 +83,15 @@ public class GridPosition{
         this.x = (int) Math.floor(pixel_x / vector_escala.x);
         this.y = (int) Math.floor(pixel_y / vector_escala.y);
 
+    }
+
+    // Getters basicos
+    public int getX(){
+        return this.x;
+    }
+
+    public int getY(){
+        return this.y;
     }
 
     /**

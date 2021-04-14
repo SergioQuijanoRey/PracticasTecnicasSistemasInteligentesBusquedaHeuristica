@@ -25,32 +25,32 @@ public class AStarNode implements Comparable<AStarNode>{
     /**
      * Posicion del mapa que representa este nodo
      * */
-    GridPosition position;
+    private GridPosition position;
 
     /**
      * Posicion que queremos alcanzar.
      * Necesaria para calcular el valor heuristico de este nodo
      * */
-    GridPosition objective;
+    private GridPosition objective;
 
     /**
      * Posiciones que nos llevan desde la posicion de inicio hasta la posicion
      * que representa este nodo
      * */
-    ArrayList<GridPosition> path_to_position;
+    private ArrayList<GridPosition> path_to_position;
 
     /**
      * Coste del camino a la posicion actual. Tenemos que guardarlo aparte y no
      * calcularlo a paritr de path_to_position porque los cambios de direccion
      * añaden costes adicionales
      * */
-    int path_cost;
+    private int path_cost;
 
     /**
      * Orientacion del jugador. Necesitamos guardar este estado porque los cambios
      * de orientacion influyen en los costes.
      * */
-    Orientation orientation;
+    private Orientation orientation;
 
     /**
      * Constructor
@@ -104,8 +104,8 @@ public class AStarNode implements Comparable<AStarNode>{
             Orientation new_orientation = new Orientation(new GridPosition(x_delta, y_delta));
 
             // Posicion resultante de aplicar los deltas
-            int new_x = this.position.x + x_delta;
-            int new_y = this.position.y + y_delta;
+            int new_x = this.get_position().getX() + x_delta;
+            int new_y = this.get_position().getY() + y_delta;
             GridPosition new_position = new GridPosition(new_x, new_y);
 
             // Comprobamos que no nos salgamos por la izquierda o por arriba
@@ -116,7 +116,7 @@ public class AStarNode implements Comparable<AStarNode>{
 
             // Comprobamos que no nos salgamos por la derecha o por debajo
             // del mapa
-            if(new_x >= world_dimensions_grid.x || new_y >= world_dimensions_grid.y){
+            if(new_x >= world_dimensions_grid.getX() || new_y >= world_dimensions_grid.getY()){
                 continue;
             }
 
