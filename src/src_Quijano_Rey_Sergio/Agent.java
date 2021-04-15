@@ -232,6 +232,8 @@ public class Agent extends core.player.AbstractPlayer{
 
         if(this.plan == null || this.plan.isEmpty() == true){
             this.plan = this.a_star(stateObs, elapsedTimer);
+            System.out.println("Las acciones son:");
+            System.out.println(this.plan);
             // No hace falta hacer this.objective == null porque solo tenemos que alcanzar el portal,
             // el objetivo no cambia como en otros niveles
         }
@@ -445,7 +447,6 @@ public class Agent extends core.player.AbstractPlayer{
 
             // Comprobamos que el nodo sea el nodo solucion
             if(current.isObjective() == true){
-                System.out.println("HEMOS ENCONTRADO EL OBJETIVO");
                 break;
             }
 
@@ -482,7 +483,6 @@ public class Agent extends core.player.AbstractPlayer{
                 // Si el hijo no esta en abiertos, logicamente lo que tenemos que hacer es añadirlo
                 // para que mas tarde sea explorado
                 if(already_open == false){
-                    System.out.println("Añadimos un nodo al conjunto de abiertos");
                     open.add(child);
                     continue;
                 }
@@ -500,26 +500,17 @@ public class Agent extends core.player.AbstractPlayer{
 
             // Añadimos el nodo actual a cerrados porque ya ha sido explorado
             closed.add(current);
-
-            System.out.println("Tenemos " + open.size() + " nodos abiertos");
-            System.out.println("Tenemos " + closed.size() + " nodos cerrados");
         }
 
         // Comprobamos si hemos llegado a la solucion
         // Si no hemos llegado, devolvemos la accion nula para que el programa no de un fallo
-        //if(current.isObjective() == false){
-        //    System.out.println("El objetivo actual no es el objetivo buscado");
-        //    System.out.println("La posicion final es " + current.getPosition());
-        //    System.out.println("El objetivo era " + new GridPosition(this.current_objective, this.scale_factor));
-        //    System.out.println("A* devuelve accion nula");
-        //    System.out.println("");
-        //    Stack<Types.ACTIONS> empty_path = new Stack<Types.ACTIONS>();
-        //    empty_path.push(Types.ACTIONS.ACTION_NIL);
-        //    return empty_path;
-        //}
+        if(current.isObjective() == false){
+            Stack<Types.ACTIONS> empty_path = new Stack<Types.ACTIONS>();
+            empty_path.push(Types.ACTIONS.ACTION_NIL);
+            return empty_path;
+        }
 
         // Devolvemos el conjunto de acciones a partir del nodo solucion
-        System.out.println("A* ha encontrado un buen objetivo que estamos devolviendo");
         return reconstruct_path_to_actions(current);
     }
 
