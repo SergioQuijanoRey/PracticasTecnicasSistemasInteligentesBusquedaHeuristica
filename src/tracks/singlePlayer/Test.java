@@ -42,42 +42,42 @@ public class Test {
 
         // En principio solo deberia ir del 0 al 4, pero como hemos añadido mapas
         // personalizados por los profesores, podemos poner un valor hasta 10
-		int levelIdx = 5;
+        int levelIdx = 5;
 
-		String gameName = games[gameIdx][1];
-		String game = games[gameIdx][0];;
-		String level1 = game.replace(gameName, gameName + "_lvl" + levelIdx);
+    String gameName = games[gameIdx][1];
+    String game = games[gameIdx][0];;
+    String level1 = game.replace(gameName, gameName + "_lvl" + levelIdx);
 
-		String recordActionsFile = null;// "actions_" + games[gameIdx] + "_lvl"
-						// + levelIdx + "_" + seed + ".txt";
-						// where to record the actions
-						// executed. null if not to save.
-                        //
-        // Establezco un archivo para guardar la traza de ejecucion
-        recordActionsFile = "traza_ejecucion.data";
+    String recordActionsFile = null;// "actions_" + games[gameIdx] + "_lvl"
+                    // + levelIdx + "_" + seed + ".txt";
+                    // where to record the actions
+                    // executed. null if not to save.
+                    //
+    // Establezco un archivo para guardar la traza de ejecucion
+    recordActionsFile = "traza_ejecucion.data";
 
-		// 1. This starts a game, in a level, played by a human.
-		//ArcadeMachine.playOneGame(game, level1, recordActionsFile, seed);
+    // 1. This starts a game, in a level, played by a human.
+    //ArcadeMachine.playOneGame(game, level1, recordActionsFile, seed);
 
-		// 2. This plays a game in a level by the controller.
-		ArcadeMachine.runOneGame(game, level1, visuals, TSIController, recordActionsFile, seed, 0);
+    // 2. This plays a game in a level by the controller.
+    ArcadeMachine.runOneGame(game, level1, visuals, TSIController, recordActionsFile, seed, 0);
 
 
-		// 3. This replays a game from an action file previously recorded
-		// String readActionsFile = recordActionsFile;
-		// ArcadeMachine.replayGame(game, level1, visuals, readActionsFile);
+    // 3. This replays a game from an action file previously recorded
+    // String readActionsFile = recordActionsFile;
+    // ArcadeMachine.replayGame(game, level1, visuals, readActionsFile);
 
-		// 4. This plays a single game, in N levels, M times :
-		//String level2 = new String(game).replace(gameName, gameName + "_lvl" + 1);
-		//int M = 10;
-		//for(int i=0; i<games.length; i++){
-		//	game = games[i][0];
-		//	gameName = games[i][1];
-		//	level1 = game.replace(gameName, gameName + "_lvl" + levelIdx);
-		//	ArcadeMachine.runGames(game, new String[]{level1}, M, sampleMCTSController, null);
-		//}
+    // 4. This plays a single game, in N levels, M times :
+    //String level2 = new String(game).replace(gameName, gameName + "_lvl" + 1);
+    //int M = 10;
+    //for(int i=0; i<games.length; i++){
+    //	game = games[i][0];
+    //	gameName = games[i][1];
+    //	level1 = game.replace(gameName, gameName + "_lvl" + levelIdx);
+    //	ArcadeMachine.runGames(game, new String[]{level1}, M, sampleMCTSController, null);
+    //}
 
-		//5. This plays N games, in the first L levels, M times each. Actions to file optional (set saveActions to true).
+    //5. This plays N games, in the first L levels, M times each. Actions to file optional (set saveActions to true).
 //		int N = games.length, L = 2, M = 1;
 //		boolean saveActions = false;
 //		String[] levels = new String[L];
@@ -96,5 +96,5 @@ public class Test {
 //		}
 
 
-    }
+}
 }

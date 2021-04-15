@@ -101,6 +101,17 @@ public class Agent extends core.player.AbstractPlayer{
     boolean a_star_was_succesfull = true;
 
     /**
+     * Tiempo tope para dejar de buscar y guardar el estado
+     * */
+    int millis_threshold = 1;
+
+    /**
+     * Si no tenemos tiempo, guardamos el conjunto de abiertos y cerrados para que en la siguiente
+     * vez sigamos iterando
+     * */
+    BufferContent buffer = null;
+
+    /**
      * Constructor del agente.
      * Tiene que recibir esos parametros de entrada porque asi se indica en [1]
      * @param so estado del mundo, dado como una observacion
@@ -471,6 +482,14 @@ public class Agent extends core.player.AbstractPlayer{
         // esta estructura
         ArrayList<AStarNode> closed = new ArrayList<AStarNode>();
 
+
+        // En caso de que estemos continuando una busqueda previa que agoto su tiempo, cargamos los
+        // datos del buffer
+        if(this.a_star_was_succesfull == false){
+            open = this.buffer.getOpen();
+            closed = this.buffer.getClosed();
+        }
+
         // TODO -- Sergio -- meter esto dentro del while para que sea mas idiomatico
         // TODO -- Sergio -- Hace que se parezca demasiado al codigo de lucia
         AStarNode current = null;
@@ -488,6 +507,16 @@ public class Agent extends core.player.AbstractPlayer{
             // Generamos los hijos e iteramos sobre ellos
             ArrayList<AStarNode> childs = current.generate_childs(this.world_dimensions_grid, this.inmovable_grid_positions);
             for(AStarNode child: childs){
+
+                // Comprobacion de tiempos
+                if(this.can_we_continue(elapsedTimer) == false){
+                    System.out.println("GUARDANDO CONTENIDOS EN EL BUFFER");
+                    this.a_star_was_succesfull = false;
+                    this.save_progress(open, closed);
+                    return construct_nil_path();
+                }
+
+
                 // Comprobamos que el hijo no sea lo mismo que el padre
                 if(child.isSameAsParent() == true){
                     continue;
@@ -539,10 +568,11 @@ public class Agent extends core.player.AbstractPlayer{
         // Comprobamos si hemos llegado a la solucion
         // Si no hemos llegado, devolvemos la accion nula para que el programa no de un fallo
         if(current.isObjective() == false){
-            Stack<Types.ACTIONS> empty_path = new Stack<Types.ACTIONS>();
-            empty_path.push(Types.ACTIONS.ACTION_NIL);
-            return empty_path;
+            return construct_nil_path();
         }
+
+        // A* se ha ejecutado sin problemas
+        this.notify_a_star_was_succesful();
 
         // Devolvemos el conjunto de acciones a partir del nodo solucion
         return reconstruct_path_to_actions(current);
@@ -594,4 +624,52 @@ public class Agent extends core.player.AbstractPlayer{
         // Esto no deberia pasar por las precondiciones
         return null;
     }
+
+    /**
+     * Comprueba si tenemos suficiente tiempo para seguir operando
+     * */
+    boolean can_we_continue(ElapsedCpuTimer elapsedTimer){
+        if(elapsedTimer.remainingTimeMillis() < this.millis_threshold){
+            return false;
+        }
+
+        return true;
+
+    }
+
+    /**
+     * Devuelve un path de acciones con solo una accion ACTIONS.ACTION_NIL
+     * */
+    Stack<Types.ACTIONS> construct_nil_path(){
+        Stack<Types.ACTIONS> empty_path = new Stack<Types.ACTIONS>();
+        empty_path.add(Types.ACTIONS.ACTION_NIL);
+        return empty_path;
+    }
+
+    /**
+     * Cuando paramos una busqueda, tenemos que guardar el progreso
+     * */
+    void save_progress(PriorityQueue<AStarNode> open, ArrayList<AStarNode> closed){
+        this.buffer = new BufferContent(open, closed);
+    }
+
+    /**
+     * Tomamos los contenidos que hemos guardado previamente en el buffer para seguir buscando
+     * */
+    BufferContent load_progress(){
+        return this.buffer;
+    }
+
+    /**
+     * Operaciones que tenemos que ejecutar cuando A* se ejecuta sin problemas en su franja de tiempo.
+     * Ponemos el flag a true y borramos los buffers
+     * */
+    void notify_a_star_was_succesful(){
+        // Flag para que sepamos que hemos encontrado solucion
+        this.a_star_was_succesfull = true;
+
+        // Borramos los contenidos del buffer
+        this.buffer = null;
+    }
+
 }
