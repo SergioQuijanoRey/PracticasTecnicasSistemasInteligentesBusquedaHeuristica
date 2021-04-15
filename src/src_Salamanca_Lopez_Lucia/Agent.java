@@ -19,7 +19,7 @@ public class Agent extends AbstractPlayer{
     Vector2d fescala;
     Vector2d portal;
     Vector2d gema = null;
-    
+
     final Vector2d ARRIBA = new Vector2d(0.0,-1.0);
     final Vector2d ABAJO = new Vector2d(0.0,1.0);
     final Vector2d IZQ = new Vector2d(-1.0,0.0);
@@ -27,7 +27,7 @@ public class Agent extends AbstractPlayer{
     Stack<ACTIONS> camino = new Stack<>();
     int nivel = 1;
     int num_gemas = 0;
-    
+
     public Agent (StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
         //Calculamos el factor de escala entre mundos (pixeles -> grid)
         fescala = new Vector2d(stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
@@ -36,11 +36,11 @@ public class Agent extends AbstractPlayer{
         portal = stateObs.getPortalsPositions()[0].get(0).position;
         portal.x = Math.floor(portal.x / fescala.x);
         portal.y = Math.floor(portal.y / fescala.y);
-        
+
         if (stateObs.getResourcesPositions(stateObs.getAvatarPosition())!= null){
             gema = next_gema(stateObs);
             gema.x = Math.floor(gema.x / fescala.x);
-            gema.y = Math.floor(gema.y / fescala.y);   
+            gema.y = Math.floor(gema.y / fescala.y);
             camino = calcularCamino(stateObs,elapsedTimer,gema);
             num_gemas ++;
         }
@@ -50,24 +50,24 @@ public class Agent extends AbstractPlayer{
         else{
             camino = calcularCamino(stateObs,elapsedTimer, portal);
         }
-        
-        
+
+
     }
-    
+
     public void init(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
-        
+
     }
-    
+
     @Override
     public ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         if(!camino.isEmpty()){
-            return camino.pop();            
+            return camino.pop();
         }
         else{
             if (stateObs.getResourcesPositions(stateObs.getAvatarPosition())!= null && num_gemas<9){
             gema = next_gema(stateObs);
             gema.x = Math.floor(gema.x / fescala.x);
-            gema.y = Math.floor(gema.y / fescala.y);   
+            gema.y = Math.floor(gema.y / fescala.y);
             camino = calcularCamino(stateObs,elapsedTimer,gema);
             num_gemas ++;
             return camino.pop();
@@ -79,7 +79,7 @@ public class Agent extends AbstractPlayer{
 
         return ACTIONS.ACTION_NIL;
     }
-    
+
     // Gema a la que ir más cercana con la distancia Manhattan
     public Vector2d next_gema(StateObservation stateObs){
         ArrayList<Integer> distancias = new ArrayList<>();
@@ -97,39 +97,39 @@ public class Agent extends AbstractPlayer{
                     return true;
                 }
             }
-        return false;            
+        return false;
     }
-    
-    
+
+
     // Vemos si un nodo está en abiertos y devolvemos el índice, si no está devolvemos -1
     private int isAbiertos (Nodo[] abiertos, Vector2d pos, Vector2d ori){
-        
+
         for( int i=0; i< abiertos.length; i++){
             Vector2d posicion = abiertos[i].getPosition();
             Vector2d orientacion = abiertos[i].getOrientacion();
             if((posicion.x == pos.x) && (posicion.y==pos.y) && (orientacion.x==ori.x) && (orientacion.y==ori.y))
                 return i;
-                
+
         }
         return -1;
     }
-    
-    
-    
+
+
+
     // Expande un nodo y devuelve los vecinos de dicho nodo
     ArrayList<Nodo> expandirNodo (Nodo n, StateObservation stateObs, Vector2d destino){
         // ArrayList que vamos a devolver con los hijos del nodo
         ArrayList<Nodo> hijos = new ArrayList<>();
-        
+
         // Posicion y orientacion del padre de dichos hijos
         Vector2d posicion = n.getPosition();
         Vector2d ori = n.getOrientacion();
-        
+
         // El coste del camino que lleva realizado el padre
         int costePadre = n.getG();
-        
+
         Nodo hijo = null;
-        
+
         // Calculamos las nuevas posiciones en el caso de que sea posible llegar a dicha posicion
         // Si no se sale del tablero
         if (posicion.y - 1 >= 0) {
@@ -137,18 +137,18 @@ public class Agent extends AbstractPlayer{
             if(isMuro(stateObs,(int)posicion.x, (int)posicion.y-1)){}
             else{
                 hijo = new Nodo(new Vector2d(posicion.x, posicion.y-1), destino, n, ARRIBA, ACTIONS.ACTION_UP);
-                // Si estamos orientados a dicha casilla solo necesitaremos realizar una accion 
+                // Si estamos orientados a dicha casilla solo necesitaremos realizar una accion
                 if ((ori.x == ARRIBA.x) && (ori.y == ARRIBA.y)){
                     hijo.setAccion_dup(false);
                     hijo.setG(costePadre+1);
                 }
-                // Si no estamos orientados, giramos hacia esa casilla por lo que necesitamos 
+                // Si no estamos orientados, giramos hacia esa casilla por lo que necesitamos
                 // realizar dos acciones (por ello el coste es dos)
                 else{
                     hijo.setAccion_dup(true);
                     hijo.setG(costePadre+2);
                 }
-                  
+
                 hijos.add(hijo);
             }
         }
@@ -166,7 +166,7 @@ public class Agent extends AbstractPlayer{
                     hijo.setAccion_dup(true);
                     hijo.setG(costePadre+2);
                 }
-                
+
                 hijos.add(hijo);
             }
         }
@@ -182,7 +182,7 @@ public class Agent extends AbstractPlayer{
                     hijo.setAccion_dup(true);
                     hijo.setG(costePadre+2);
                 }
-                    
+
                 hijos.add(hijo);
             }
         }
@@ -199,51 +199,51 @@ public class Agent extends AbstractPlayer{
                     hijo.setAccion_dup(true);
                     hijo.setG(costePadre+2);
                 }
-                
+
                 hijos.add(hijo);
-            }  
+            }
         }
-        
+
         return hijos;
     }
-    
+
     // Función A* inicial (luego iré cambiándola)
     private Stack<ACTIONS>  calcularCamino(StateObservation stateObs, ElapsedCpuTimer elapsedTimer, Vector2d destino){
         Stack<ACTIONS>  camino = new Stack<>();
 
         // Calculamos la posicion actual del avatar
-        Vector2d avatar =  new Vector2d(stateObs.getAvatarPosition().x / fescala.x, 
+        Vector2d avatar =  new Vector2d(stateObs.getAvatarPosition().x / fescala.x,
         		stateObs.getAvatarPosition().y / fescala.y);
         // Obtenemos la orientacion del avatar
         Vector2d orientacion = stateObs.getAvatarOrientation();
         // Creamos el nodo inicial
         Nodo inicial = new Nodo(avatar, destino, orientacion, ACTIONS.ACTION_NIL);
-        
+
         // Creamos el vector de abiertos
         PriorityQueue<Nodo> abiertos = new PriorityQueue<Nodo>(new NodoComparator());
         abiertos.add(inicial);
-        
+
         // Creamos el vector de cerrados
         ArrayList<Nodo> cerrados = new ArrayList<Nodo>();
-        
-        
+
+
         Nodo nodo = null;
-        
+
         while (!abiertos.isEmpty()){
             // Cogemos el nodo con mejor f(n)
             nodo = abiertos.peek();
-            
+
             // Si el nodo es el nodo destino, termina
             if ((nodo.getPosition().x == destino.x) && (nodo.getPosition().y == destino.y)){
                 break;
             }
-            
+
             // Creamos un vector de los sucesores del nodo
             ArrayList<Nodo> hijos = expandirNodo(nodo, stateObs, destino);
-            
+
             for (int i=0; i<hijos.size(); i++){
                 Nodo sucesor = hijos.get(i);
-                
+
                 // si el sucesor es el mismo que el padre no hacemos nada
                 if(sucesor==sucesor.getPadre()){}
                 else {
@@ -251,7 +251,7 @@ public class Agent extends AbstractPlayer{
                     int indice_c = cerrados.indexOf(sucesor);
                     // Vemos si el nodo esta en abiertos y guardamos el indice
                     int indice_a = isAbiertos(abiertos.toArray(new Nodo[0]),sucesor.getPosition(), sucesor.getOrientacion());
-                   
+
                     // Si el nodo esta en cerrados
                     if(indice_c != -1){
                        // Vemos si el sucesor tiene menor g(n) que el que esta en cerrados
@@ -259,7 +259,7 @@ public class Agent extends AbstractPlayer{
                            // si es asi lo quitamos de cerrados y lo metemos en abiertos
                            cerrados.remove(i);
                            abiertos.add(sucesor);
-                       } 
+                       }
                     }
                     // Si el sucesor no esta en abiertos lo añadimos
                     else if (indice_a == -1){
@@ -269,22 +269,22 @@ public class Agent extends AbstractPlayer{
                     else if (abiertos.toArray(new Nodo[0])[indice_a].getG() > sucesor.getG()){
                         // Borramos el nodo que teniamos en abiertos y añadimos el nuevo sucesor
                         abiertos.remove(abiertos.toArray(new Nodo[0])[indice_a]);
-                        abiertos.add(sucesor);                       
+                        abiertos.add(sucesor);
                     }
-                    
-                }  
+
+                }
             }
-            
+
             // Eliminamos el nodo que acabamos de explorar de abiertos
             abiertos.remove(nodo);
-            
-            
-            
+
+
+
         }
         // Si no llegase a encontrar el camino al destino devolvemos ACTION_NIL
         if((nodo.getPosition().x!=destino.x)||(nodo.getPosition().y!=destino.y)){
-            camino.add(ACTIONS.ACTION_NIL); 
-            
+            camino.add(ACTIONS.ACTION_NIL);
+
         }
         else{
             // Calculamos el camino viendo la accion que hemos necesitado para llegar a cada nodo
@@ -297,9 +297,9 @@ public class Agent extends AbstractPlayer{
                 nodo = nodo.getPadre();
             }
         }
-        
+
         return camino;
-        
+
     }
 
 }

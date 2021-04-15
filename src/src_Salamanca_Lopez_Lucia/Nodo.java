@@ -9,28 +9,28 @@ import tools.Vector2d;
  *
  * @author Lucía Salamanca López
  */
- class Nodo {
+public class Nodo {
     private Vector2d position = null;
     private int g = 0; // función de coste
     private int h = 0; // función heurística
     private int f = 0;
-    
+
     private Nodo padre = null; // nodo padre
     private ACTIONS accion = ACTIONS.ACTION_NIL; // accion para llegar al nodo desde el padre
     private boolean accion_dup = false; // la accion para llegar al nodo ha de ser realizada dos veces (debido a un cambio de orientacion)
     private Vector2d orientacion = null; // orientacion
-    
+
     // Constructor para el nodo inicial
     public Nodo(Vector2d posicion, Vector2d destino, Vector2d orientation, ACTIONS action ){
         position = posicion;
         // Calculamos la distancia Manhattan para la heurística
         h = (int)(Math.abs(position.x - destino.x) + Math.abs(position.y-destino.y));
         f = g + h;
-        padre = null; 
+        padre = null;
         orientacion = orientation;
-        accion = action;      
+        accion = action;
     }
-    
+
     public Nodo (Nodo n2){
         this.position = n2.position;
         this.g = n2.g;
@@ -40,7 +40,7 @@ import tools.Vector2d;
         this.accion = n2.accion;
         this.orientacion = n2.orientacion;
     }
-    
+
     //Constructor
     public Nodo(Vector2d posicion, Vector2d destino, Nodo nodoPadre, Vector2d orientation, ACTIONS action ){
         position = posicion;
@@ -49,14 +49,14 @@ import tools.Vector2d;
         f = g + h;
         padre = nodoPadre; // esto puede dar error seguramente
         orientacion = orientation;
-        accion = action;      
+        accion = action;
     }
 
     public String toString(){
         return ("Posicion: "+position.toString()+" f: "+f+" orientacion: "+ orientacion.toString()+" accion "+ accion);
     }
-    
-    // Funcion para ver si dos nodos son iguales 
+
+    // Funcion para ver si dos nodos son iguales
     public boolean equals(Nodo n2){
         return ((position.x == n2.getPosition().x) &&(position.x == n2.getPosition().y) && (orientacion.x == n2.getOrientacion().x)&&(orientacion.y == n2.getOrientacion().y));
     }
@@ -68,8 +68,8 @@ import tools.Vector2d;
     public void setOrientacion(Vector2d orientacion) {
         this.orientacion = orientacion;
     }
-    
-    
+
+
     public Vector2d getPosition() {
         return position;
     }
@@ -115,7 +115,7 @@ import tools.Vector2d;
     public void setAccion_dup(boolean accion_dup) {
         this.accion_dup = accion_dup;
     }
-    
-    
-    
+
+
+
 }
