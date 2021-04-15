@@ -15,6 +15,8 @@ import core.game.StateObservation;
 
 
 import java.util.ArrayList;
+import java.util.HashSet;
+
 
 /**
  * Representa la posicion en el grid de un mapa, conociendo los pixeles de la posicion
@@ -156,6 +158,17 @@ public class GridPosition{
     }
 
     /**
+     * Genera un hash para la clase.
+     * Es necesario para usar un HashSet sobre esta clase y comprobar si una posicion pertenece
+     * al conjunto de posiciones inamovibles de forma rapida
+     * */
+    @Override
+    public int hashCode(){
+        return this.x * this.y;
+
+    }
+
+    /**
      * Util para calcular la diferencia entre dos posiciones, y con ello, saber
      * en que direccion movernos para pasar de la primera posicion a la segunda
      * */
@@ -175,7 +188,7 @@ public class GridPosition{
      * @param world_dimensions_grid dimensiones del mundo, para comprobar si nos salimos del mapa
      * @param inmovable_grid_positions muros del mundo que no podemos atravesar
      * */
-    public boolean isValidToMove(GridPosition world_dimensions_grid, ArrayList<GridPosition> inmovable_grid_positions){
+    public boolean isValidToMove(GridPosition world_dimensions_grid, HashSet<GridPosition> inmovable_grid_positions){
         // Nos salimos del mapa por arriba o por la izquierda
         if(this.x < 0 || this.y < 0){
             return false;

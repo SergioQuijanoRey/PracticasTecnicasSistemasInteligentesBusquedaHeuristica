@@ -133,7 +133,7 @@ public class AStarNode{
      * @param inmovable_grid_positions para ver que los hijos no caen en muros u otras posiciones
      * no validas
      * */
-    public ArrayList<AStarNode> generate_childs(GridPosition world_dimensions_grid, ArrayList<GridPosition> inmovable_grid_positions){
+    public ArrayList<AStarNode> generate_childs(GridPosition world_dimensions_grid, HashSet<GridPosition> inmovable_grid_positions){
         // Todas las posibles variaciones en las posiciones del mapa
         int [][] deltas = {
             {-1, 0},

@@ -26,6 +26,7 @@ import java.util.Random;
 // Tipos de datos de java
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.lang.Exception;
 import java.util.PriorityQueue;
 import java.util.Stack;
@@ -82,7 +83,7 @@ public class Agent extends core.player.AbstractPlayer{
      * Estas posiciones no se modifican a lo largo del juego asi que se calculan
      * una unica vez
      * */
-    private ArrayList<GridPosition> inmovable_grid_positions = null;
+    private HashSet<GridPosition> inmovable_grid_positions = null;
 
     /**
      * Acciones a realizar para ir de un punto a otro.
@@ -157,7 +158,7 @@ public class Agent extends core.player.AbstractPlayer{
         // nodos hijos validos y no repetir constantemente este calculo, pues
         // las posiciones inamovibles no se modifican durante la partida
         ArrayList<Observation>[] inmovables_obs = stateObs.getImmovablePositions();
-        this.inmovable_grid_positions = new ArrayList<GridPosition>();
+        this.inmovable_grid_positions = new HashSet<GridPosition>();
         for(ArrayList<Observation> row : inmovables_obs){
             for(Observation obs : row){
                 GridPosition current_inmovable_grid = new GridPosition(obs.position, this.scale_factor);
