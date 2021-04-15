@@ -65,6 +65,14 @@ public class Agent extends core.player.AbstractPlayer{
     int nivel = 1;
     int num_gemas = 0;
 
+    /**
+     * Nivel en el que nos encontramos.
+     * Sabemos el nivel conociendo si hay o no gemas y si hay o no enemigos (y en
+     * caso de haberlos, cuantos enemigos hay)
+     *
+     * Cuando current_level = -1, tenemos que calcular el nivel en el que estamos
+     * */
+    private int current_level = -1;
 
 
     /**
@@ -75,38 +83,140 @@ public class Agent extends core.player.AbstractPlayer{
      * */
     private Vector2d current_objective = null;
 
-    public Agent (StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
+    public Agent(StateObservation so, ElapsedCpuTimer elapsedTimer) {
         //Calculamos el factor de escala entre mundos (pixeles -> grid)
-        fescala = new Vector2d(stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
-                stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length);
+        fescala = new Vector2d(so.getWorldDimension().width / so.getObservationGrid().length,
+                so.getWorldDimension().height / so.getObservationGrid()[0].length);
 
-        portal = stateObs.getPortalsPositions()[0].get(0).position;
+        portal = so.getPortalsPositions()[0].get(0).position;
         portal.x = Math.floor(portal.x / fescala.x);
         portal.y = Math.floor(portal.y / fescala.y);
 
-        if (stateObs.getResourcesPositions(stateObs.getAvatarPosition())!= null){
-            this.current_objective = choose_objective_as_closest_gem(stateObs, elapsedTimer);
+        if (so.getResourcesPositions(so.getAvatarPosition())!= null){
+            this.current_objective = choose_objective_as_closest_gem(so, elapsedTimer);
             this.current_objective.x = Math.floor(this.current_objective.x / fescala.x);
             this.current_objective.y = Math.floor(this.current_objective.y / fescala.y);
-            camino = calcularCamino(stateObs,elapsedTimer,this.current_objective);
+            camino = calcularCamino(so,elapsedTimer,this.current_objective);
             num_gemas ++;
         }
         if (this.current_objective != null){
-            this.camino = calcularCamino(stateObs,elapsedTimer,this.current_objective);
+            this.camino = calcularCamino(so,elapsedTimer,this.current_objective);
         }
         else{
-            camino = calcularCamino(stateObs,elapsedTimer, portal);
+            camino = calcularCamino(so,elapsedTimer, portal);
+        }
+
+
+
+        // Establecemos el nivel en el que nos encontramos
+        try {
+            // Mirando si hay gemas y enemigos, establecemos el nivel en el que
+            // nos encontramos
+            this.set_level(so, elapsedTimer);
+        } catch (Exception ex) {
+            // TODO -- Sergio -- mirar como hacer esto mejor
+            // Cuando hay una excepcion porque no se ha hecho bien el calculo,
+            // empleamos la planificacion mas avanzada que tenemos
+            this.current_level = 5;
         }
 
 
     }
 
+    /**
+     * Con los datos del entorno, establece en que nivel nos encontramos.
+     * Esto se hace viendo si hay no hay gemas en el mapa y viendo si hay o no
+     * hay enemigos en el mapa
+     *
+     * @param stateObs estado del mundo, del que tomamos los datos de enemigos y
+     * gemas
+     * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
+     * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
+     *
+     * Modifico el valor de this.current_level
+     * */
+    void set_level(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) throws Exception{
+        // Posicion del jugador
+        // Lo necesitamos para ver si hay NPCs, porque se pasa como parametro
+        // para devolverlos ordenados ascendentemente por distancia al jugador [2]
+        // Tambien lo necesitamos para ordenadr las gemas por orden ascendente
+        // de distancia al jugador [2]
+        Vector2d player_position = stateObs.getAvatarPosition();
+
+        // Tomamos los enemigos ordenados por la posicion
+        ArrayList<Observation>[] enemies = stateObs.getNPCPositions(player_position);
+
+        // Tomamos ahora las posiciones de las gemas
+        ArrayList<Observation>[] gems = stateObs.getResourcesPositions(player_position);
+
+        // Decidimos cual es el nivel con los datos recogidos
+        Boolean enemies_exist =  enemies != null && enemies.length > 0;
+        Boolean gems_exist = gems != null && gems.length > 0;
+
+        if(gems_exist == false && enemies_exist == false){
+            this.current_level = 1;
+        }
+        else if(gems_exist == true && enemies_exist == false){
+            this.current_level = 2;
+        }
+        else if(gems_exist == false && enemies_exist == true){
+            // El nivel depende de que haya un enemigo o dos
+            if(enemies.length == 1){
+                this.current_level = 3;
+            }else{
+                this.current_level = 4;
+            }
+        }
+        else if(gems_exist == true && enemies_exist == true){
+            this.current_level = 5;
+        }else{
+            // Esto no puede pasar porque deja al programa en un estado invalido
+            throw new Exception("El calculo de nivel que ha hecho el agente no es valido");
+        }
+    }
+
+    // TODO -- Sergio -- aprovechar este tiempo de computo
     public void init(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
 
     }
 
+   /**
+     * Elige una accion conociendo el estado del mundo, el nivel y el tiempo que ya esta consumido
+     * @param stateObs estado del mundo
+     * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
+     * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
+     * @return la accion que debe realizar nuestro agente
+     *
+     * Dependiendo del nivel en el que estemos, llamamos a uno de los metodos
+     * que eligen accion segun el nivel
+     * */
     @Override
-    public ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+    public Types.ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        switch(this.current_level){
+            case 1:
+                return this.level1_act(stateObs, elapsedTimer);
+            case 2:
+                // TODO -- Sergio -- Quitar esto porque no es verdad
+                return this.level1_act(stateObs, elapsedTimer);
+            case 3:
+            case 4:
+                // TODO -- Sergio -- no mostrar mensajes por pantalla
+                System.err.println("[Err] Todavia no hemos implementado este nivel");
+                System.err.println("Devolvemos accion nula");
+                return Types.ACTIONS.ACTION_NIL;
+            case 5:
+                return this.level5_act(stateObs, elapsedTimer);
+            default:
+                // TODO -- Sergio -- no mostrar mensajes por pantalla
+                System.err.println("[Err] El valor actual de nivel no es valido");
+                System.err.println("Devolvemos accion nula");
+                return Types.ACTIONS.ACTION_NIL;
+        }
+    }
+
+    // TODO -- Sergio -- Codigo de lucia
+    // TODO -- Sergio -- Antes era el act simple de lucia
+    public ACTIONS level1_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         if(!camino.isEmpty()){
             return camino.pop();
         }
@@ -125,6 +235,11 @@ public class Agent extends core.player.AbstractPlayer{
         }
 
         return ACTIONS.ACTION_NIL;
+    }
+
+    // TODO -- Sergio -- Implementar esto bien
+    public ACTIONS level5_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        return this.level1_act(stateObs, elapsedTimer);
     }
 
     /**
