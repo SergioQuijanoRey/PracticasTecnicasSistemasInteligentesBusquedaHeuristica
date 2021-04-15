@@ -125,8 +125,9 @@ public class Agent extends core.player.AbstractPlayer{
         // Calculamos las posiciones inamovibles (muros)
         this.calculate_inamovable_positions(so);
 
-        System.out.println("Posiciones inamovibles: " + this.inmovable_grid_positions);
-        System.out.println("Tamaño del mapa: " + this.world_dimensions_grid);
+        // Aprovechamos para calcular el camino porque tenemos mucho tiempo de computo
+        this.choose_objective(so, elapsedTimer);
+        this.a_star(so, elapsedTimer);
     }
 
     /**
@@ -232,8 +233,6 @@ public class Agent extends core.player.AbstractPlayer{
 
         if(this.plan == null || this.plan.isEmpty() == true){
             this.plan = this.a_star(stateObs, elapsedTimer);
-            System.out.println("Las acciones son:");
-            System.out.println(this.plan);
             // No hace falta hacer this.objective == null porque solo tenemos que alcanzar el portal,
             // el objetivo no cambia como en otros niveles
         }
@@ -451,7 +450,7 @@ public class Agent extends core.player.AbstractPlayer{
             }
 
             // Generamos los hijos e iteramos sobre ellos
-            ArrayList<AStarNode> childs = current.generate_childs(this.world_dimensions_grid, this.inmovable_grid_positions);;
+            ArrayList<AStarNode> childs = current.generate_childs(this.world_dimensions_grid, stateObs);
             for(AStarNode child: childs){
                 // Comprobamos que el hijo no sea lo mismo que el padre
                 if(child.isSameAsParent() == true){

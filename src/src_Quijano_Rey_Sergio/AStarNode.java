@@ -130,10 +130,11 @@ public class AStarNode{
     /**
      * Generamos los hijos validos de este nodo.
      * @param world_dimensions_grid para ver que los hijos generados caen dentro del mapa
+     * TODO -- Sergio -- este comentario esta desactualizado
      * @param inmovable_grid_positions para ver que los hijos no caen en muros u otras posiciones
      * no validas
      * */
-    public ArrayList<AStarNode> generate_childs(GridPosition world_dimensions_grid, ArrayList<GridPosition> inmovable_grid_positions){
+    public ArrayList<AStarNode> generate_childs(GridPosition world_dimensions_grid, StateObservation stateObs){
         // Todas las posibles variaciones en las posiciones del mapa
         int [][] deltas = {
             {-1, 0},
@@ -152,7 +153,7 @@ public class AStarNode{
 
             // Generamos la nueva posicion y comprobamos que sea valido
             GridPosition new_position = new GridPosition(this.position.getX() + x_delta, this.position.getY() + y_delta);
-            if(new_position.isValidToMove(world_dimensions_grid, inmovable_grid_positions) == false){
+            if(new_position.isValidToMove(world_dimensions_grid, stateObs) == false){
                 // TODO -- Sergio -- no mostrar mensajes por pantalla
                 continue;
             }
