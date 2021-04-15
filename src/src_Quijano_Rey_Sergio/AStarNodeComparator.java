@@ -15,12 +15,14 @@ public class AStarNodeComparator implements Comparator<AStarNode>{
      * @return un entero codificando la comparacion de los dos nodos
      * */
     public int compare(AStarNode first, AStarNode second){
-        if (first.heuristic_value()<second.heuristic_value())
-            return -1;
-        else if (first.heuristic_value()>second.heuristic_value())
-            return 1;
+        //if (first.heuristic_value()<second.heuristic_value())
+        //    return -1;
+        //else if (first.heuristic_value()>second.heuristic_value())
+        //    return 1;
 
-        return 0;
+        //return 0;
+
+        return 1;
 
     }
 

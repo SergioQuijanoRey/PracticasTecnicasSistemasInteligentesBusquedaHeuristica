@@ -28,20 +28,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.lang.Exception;
 import java.util.PriorityQueue;
-import java.util.HashSet;
 import java.awt.Dimension;
 import java.util.Collections;   // Para iterar y tomar valores minimos
 
 // Tipos de datos auxiliares que he programado
-import src_Quijano_Rey_Sergio.GridPosition;
-import src_Quijano_Rey_Sergio.AStarNode;
-import src_Quijano_Rey_Sergio.AStarNodeComparator;
-import src_Quijano_Rey_Sergio.Orientation;
-
-// TODO -- Sergio -- Codigo de Lucia
-import src_Salamanca_Lopez_Lucia.*;
-import java.util.Stack;
-import ontology.Types.ACTIONS;
+import src_Quijano_Rey_Sergio.*;
 
 /**
  * Codigo del agente inteligente que vamos a desarrollar para resolver el juego
@@ -52,19 +43,6 @@ import ontology.Types.ACTIONS;
  * */
 public class Agent extends core.player.AbstractPlayer{
 
-    // TODO -- Sergio -- Codigo de Lucia
-    //==============================================================================================
-    Vector2d fescala;
-    Vector2d portal;
-
-    final Vector2d ARRIBA = new Vector2d(0.0,-1.0);
-    final Vector2d ABAJO = new Vector2d(0.0,1.0);
-    final Vector2d IZQ = new Vector2d(-1.0,0.0);
-    final Vector2d DCHA = new Vector2d(1.0,0.0);
-    Stack<ACTIONS> camino = new Stack<>();
-    int nivel = 1;
-    int num_gemas = 0;
-
     /**
      * Nivel en el que nos encontramos.
      * Sabemos el nivel conociendo si hay o no gemas y si hay o no enemigos (y en
@@ -74,7 +52,6 @@ public class Agent extends core.player.AbstractPlayer{
      * */
     private int current_level = -1;
 
-
     /**
      * Objetivo actual a perseguir.
      * Van a ser gemas y portales por los que escapar
@@ -83,32 +60,40 @@ public class Agent extends core.player.AbstractPlayer{
      * */
     private Vector2d current_objective = null;
 
-    public Agent(StateObservation so, ElapsedCpuTimer elapsedTimer) {
-        //Calculamos el factor de escala entre mundos (pixeles -> grid)
-        fescala = new Vector2d(so.getWorldDimension().width / so.getObservationGrid().length,
-                so.getWorldDimension().height / so.getObservationGrid()[0].length);
+    /**
+     * Numero de gemas que hay que conseguir en ciertos niveles para escapar por
+     * el portal
+     * */
+    private int number_of_gems_to_get = 9;
 
-        portal = so.getPortalsPositions()[0].get(0).position;
-        portal.x = Math.floor(portal.x / fescala.x);
-        portal.y = Math.floor(portal.y / fescala.y);
+    /**
+     * Dimensiones del mundo. Para saber donde estan los extremos del mapa
+     * */
+    private GridPosition world_dimensions_grid = null;
 
-        if (so.getResourcesPositions(so.getAvatarPosition())!= null){
-            this.current_objective = choose_objective_as_closest_gem(so, elapsedTimer);
-            this.current_objective.x = Math.floor(this.current_objective.x / fescala.x);
-            this.current_objective.y = Math.floor(this.current_objective.y / fescala.y);
-            camino = calcularCamino(so,elapsedTimer,this.current_objective);
-            num_gemas ++;
-        }
-        if (this.current_objective != null){
-            this.camino = calcularCamino(so,elapsedTimer,this.current_objective);
-        }
-        else{
-            camino = calcularCamino(so,elapsedTimer, portal);
-        }
+    /**
+     * Factor de escala para convertir posiciones en Vector2d a posiciones GridPosition
+     * */
+    private Vector2d scale_factor = null;
 
+    /**
+     * Posiciones inamovibles (muros) del mapa.
+     * Estas posiciones no se modifican a lo largo del juego asi que se calculan
+     * una unica vez
+     * */
+    private ArrayList<GridPosition> inmovable_grid_positions = null;
 
+    /**
+     * Constructor del agente.
+     * Tiene que recibir esos parametros de entrada porque asi se indica en [1]
+     * @param so estado del mundo, dado como una observacion
+     * @param elapsedTimer timer que nos va a indicar el tiempo de computo que tenemos
+     *
+     * Tiene un segundo de computo
+     * */
+    public Agent(StateObservation so, ElapsedCpuTimer elapsedTimer){
 
-        // Establecemos el nivel en el que nos encontramos
+        // Miramos en que nivel nos encontramos
         try {
             // Mirando si hay gemas y enemigos, establecemos el nivel en el que
             // nos encontramos
@@ -120,7 +105,131 @@ public class Agent extends core.player.AbstractPlayer{
             this.current_level = 5;
         }
 
+        // Calculamos las dimensiones del mundo
+        Dimension world_dimensions = so.getWorldDimension();
+        this.world_dimensions_grid = new GridPosition(world_dimensions.width, world_dimensions.height, so);
 
+        // Calculamos el factor de escala
+        this.calculate_scale_factor(so);
+
+        // Calculamos las posiciones inamovibles (muros)
+        this.calculate_inamovable_positions(so);
+
+        System.out.println("Posiciones inamovibles: " + this.inmovable_grid_positions);
+        System.out.println("Tamaño del mapa: " + this.world_dimensions_grid);
+    }
+
+    /**
+     * Calculamos el conjunto de GridPosition que son posiciones muro
+     * @param stateObs observacion del mundo de la que sacamos la informacion de los muros
+     * */
+    void calculate_inamovable_positions(StateObservation stateObs){
+        // Conjunto de posiciones inamovibles. Necesario para calcular los
+        // nodos hijos validos y no repetir constantemente este calculo, pues
+        // las posiciones inamovibles no se modifican durante la partida
+        ArrayList<Observation>[] inmovables_obs = stateObs.getImmovablePositions();
+        this.inmovable_grid_positions = new ArrayList<GridPosition>();
+        for(ArrayList<Observation> row : inmovables_obs){
+            for(Observation obs : row){
+                GridPosition current_inmovable_grid = new GridPosition(obs.position, this.scale_factor);
+                this.inmovable_grid_positions.add(current_inmovable_grid);
+            }
+        }
+    }
+
+    /**
+     * Calcula el factor de escala que vamos a usar para convertir Vector2d a GridPosition
+     * @param stateObs para tomar el tamaño del mundo y hacer el calculo
+     * */
+    void calculate_scale_factor(StateObservation stateObs){
+        this.scale_factor = new Vector2d(
+            stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
+            stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length
+        );
+    }
+
+    /**
+     * Para saber cuantas gemas tenemos actualmente.
+     * @param stateObs estado del mundo
+     * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
+     * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
+     * @return el numero de gemas que tenemos actualmente
+     * */
+    int get_current_gems(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        // En otros juegos puede haber mas de un rescurso, asi que esta llamada
+        // nos devuelve HashMap<idRecurso, cantidadRecurso>
+        HashMap<Integer, Integer> resources = stateObs.getAvatarResources();
+
+        // Cuando no tenemos recursos se devuelve un HashMap vacio
+        if(resources.isEmpty()){
+            return 0;
+        }
+
+        // Devolvemos el valor guardado en el Hash
+        // La clave para las gemas es 6 (se puede ver facilmente
+        // haciendo un resources.toString())
+        return resources.get(6);
+    }
+
+   /**
+     * Elige una accion conociendo el estado del mundo, el nivel y el tiempo que ya esta consumido
+     * @param stateObs estado del mundo
+     * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
+     * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
+     * @return la accion que debe realizar nuestro agente
+     *
+     * Dependiendo del nivel en el que estemos, llamamos a uno de los metodos
+     * que eligen accion segun el nivel
+     * */
+    @Override
+    public Types.ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        switch(this.current_level){
+            case 1:
+                return this.level1_act(stateObs, elapsedTimer);
+            case 2:
+                return this.level2_act(stateObs, elapsedTimer);
+            case 3:
+                return this.level3_act(stateObs, elapsedTimer);
+            case 4:
+                return this.level4_act(stateObs, elapsedTimer);
+            case 5:
+                return this.level5_act(stateObs, elapsedTimer);
+            default:
+                // TODO -- Sergio -- no mostrar mensajes por pantalla
+                System.err.println("[Err] El valor actual de nivel no es valido");
+                System.err.println("Devolvemos accion nula");
+                return Types.ACTIONS.ACTION_NIL;
+        }
+    }
+
+    /**
+     * Elige una accion en la situacion en la que estemos en el nivel 1.
+     *
+     * En este caso, hacemos A* para calcular el camino hacia la salida y devolvemos
+     * en cada paso la accion correspondiente
+     *
+     * Los calculos solo se hacen una vez. Cuando el plan ya esta construido (no
+     * es vacio) simplemente devolvemos el siguiente elemento
+     *
+     * @param stateObs estado del mundo que nos aporta toda la informacion necesaria para la busqueda
+     * @param elapsedTimer timer para saber cuanto tiempo de computo nos queda
+     * */
+    public Types.ACTIONS level1_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        return Types.ACTIONS.ACTION_DOWN;
+    }
+
+    public Types.ACTIONS level2_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        return Types.ACTIONS.ACTION_UP;
+    }
+
+    public Types.ACTIONS level3_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        return Types.ACTIONS.ACTION_UP;
+    }
+    public Types.ACTIONS level4_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        return Types.ACTIONS.ACTION_UP;
+    }
+    public Types.ACTIONS level5_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        return Types.ACTIONS.ACTION_UP;
     }
 
     /**
@@ -173,73 +282,60 @@ public class Agent extends core.player.AbstractPlayer{
             // Esto no puede pasar porque deja al programa en un estado invalido
             throw new Exception("El calculo de nivel que ha hecho el agente no es valido");
         }
+
+        System.out.println("Estamos en el nivel " + this.current_level);
     }
 
-    // TODO -- Sergio -- aprovechar este tiempo de computo
-    public void init(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
+    /**
+     * Calcula el siguiente objetivo.
+     * Cuando no tenemos suficientes gemas, elige como objetivo la gema mas cercana
+     * Cuando tenemos todas las gemas (o cuando no hay gemas en el mapa), elige
+     * el portal mas cercano al jugador
+     *
+     * TODO -- Sergio -- Queda por implementar para otros niveles
+     * */
+    void choose_objective(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        if(this.current_level == 1){
+            this.choose_objective_as_closest_portal(stateObs, elapsedTimer);
+        }else if(this.current_level >= 2){
 
+            // Tenemos todas las gemas, tenemos que ir al portal
+            // Puede ser que tengamos mas de las gemas necesarias porque casualmente
+            // pasemos por encima de una gema de camino a otro objetivo
+            if(this.get_current_gems(stateObs, elapsedTimer) >= this.number_of_gems_to_get){
+                this.choose_objective_as_closest_portal(stateObs, elapsedTimer);
+
+                // Hacemos return para no llamar a this.choose_objective_as_closest_gem
+                // que es lo que ocurre cuando no se entra en el if, para dejar
+                // el codigo mas limpio
+                return;
+            }
+
+            // No tenemos todas las gemas, tenemos que elegir la siguiente mas cercana
+            this.choose_objective_as_closest_gem(stateObs, elapsedTimer);
+        }
     }
 
-   /**
-     * Elige una accion conociendo el estado del mundo, el nivel y el tiempo que ya esta consumido
+    /**
+     * Establece el portal mas cercano al jugador como objetivo actual.
+     *
      * @param stateObs estado del mundo
      * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
      * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
-     * @return la accion que debe realizar nuestro agente
-     *
-     * Dependiendo del nivel en el que estemos, llamamos a uno de los metodos
-     * que eligen accion segun el nivel
      * */
-    @Override
-    public Types.ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        switch(this.current_level){
-            case 1:
-                return this.level1_act(stateObs, elapsedTimer);
-            case 2:
-                // TODO -- Sergio -- Quitar esto porque no es verdad
-                return this.level1_act(stateObs, elapsedTimer);
-            case 3:
-            case 4:
-                // TODO -- Sergio -- no mostrar mensajes por pantalla
-                System.err.println("[Err] Todavia no hemos implementado este nivel");
-                System.err.println("Devolvemos accion nula");
-                return Types.ACTIONS.ACTION_NIL;
-            case 5:
-                return this.level5_act(stateObs, elapsedTimer);
-            default:
-                // TODO -- Sergio -- no mostrar mensajes por pantalla
-                System.err.println("[Err] El valor actual de nivel no es valido");
-                System.err.println("Devolvemos accion nula");
-                return Types.ACTIONS.ACTION_NIL;
-        }
-    }
+    void choose_objective_as_closest_portal(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        // Posicion del jugador
+        // La tomamos para poder hacer la llamada que nos devuelve los portales
+        // ordenados por distancia ascendente a la referencia que pasemos
+        Vector2d player_position = stateObs.getAvatarPosition();
 
-    // TODO -- Sergio -- Codigo de lucia
-    // TODO -- Sergio -- Antes era el act simple de lucia
-    public ACTIONS level1_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        if(!camino.isEmpty()){
-            return camino.pop();
-        }
-        else{
-            if (stateObs.getResourcesPositions(stateObs.getAvatarPosition())!= null && num_gemas<9){
-            this.current_objective = choose_objective_as_closest_gem(stateObs, elapsedTimer);
-            this.current_objective.x = Math.floor(this.current_objective.x / fescala.x);
-            this.current_objective.y = Math.floor(this.current_objective.y / fescala.y);
-            camino = calcularCamino(stateObs,elapsedTimer,this.current_objective);
-            num_gemas ++;
-            return camino.pop();
-            }
-            else{
-                camino = calcularCamino(stateObs,elapsedTimer, portal);
-            }
-        }
+        // Tomamos las posiciones de los portales
+        ArrayList<Observation>[] portals = stateObs.getPortalsPositions(player_position);
 
-        return ACTIONS.ACTION_NIL;
-    }
-
-    // TODO -- Sergio -- Implementar esto bien
-    public ACTIONS level5_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        return this.level1_act(stateObs, elapsedTimer);
+        // Establezco la localizacion del portal mas cercano como objetivo
+        // Se devuelve un array de arraylist, por eso tenemos que usar dos veces
+        // el indice cero
+        this.current_objective = portals[0].get(0).position;
     }
 
     /**
@@ -252,8 +348,7 @@ public class Agent extends core.player.AbstractPlayer{
      * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
      * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
      * */
-    Vector2d choose_objective_as_closest_gem(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        System.out.println("==============> Calculando la gema mas cercana");
+    void choose_objective_as_closest_gem(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         // Posicion del jugador. Para hacer la comparacion con las posiciones de las gemas
         // Usamos gridposition para la distancia manhattan de forma sencilla
         Vector2d player_position = stateObs.getAvatarPosition();
@@ -275,221 +370,56 @@ public class Agent extends core.player.AbstractPlayer{
 
         // Establecemos la gema como objetivo actual
         this.current_objective = curr_gems.get(index_of_closest_gem).position;
-
-        // TODO -- Sergio -- En el codigo original no tenia que hacer el return
-        return this.current_objective;
     }
 
-    // Vemos si la casilla es un muro
-    public boolean isMuro (StateObservation stateObs, int x, int y){
-            if (stateObs.getObservationGrid()[x][y].size()>0){
-                if (stateObs.getObservationGrid()[x][y].get(0).itype == 0) {
-                    return true;
-                }
-            }
-        return false;
+    /**
+     * Algoritmo A* para devolver una lista de posiciones para llevar al jugador
+     * al objetivo marcado.
+     *
+     * @param stateObs estado del mundo
+     * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
+     * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
+     * @return la lista ordenada de posiciones en el grid que representan el camino
+     *
+     * Se devuelven posiciones. Por tanto, el metodo que llame a este metodo es
+     * responsable de convertir las posiciones en acciones
+     *
+     * Cuando no tenemos un objetivo, se llama al metodo que elige el siguiente
+     * objetivo
+     *
+     * TODO -- comprobar los tiempos y parar cuando quede poco tiempo de computo
+     * TODO -- este A* esta mal hecho, porque con otras planificaciones si que va
+     * */
+    ArrayList<GridPosition> a_star(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        ArrayList<GridPosition> path = new ArrayList<GridPosition>();
+        path.add(new GridPosition(0, 0));
+        return path;
     }
 
+    // TODO -- Sergio -- no estoy usando esta funcion
+    ///**
+    // * Funcion auxiliar para encontrar el nodo que representa una determinada
+    // * posicion.
+    // *
+    // * @param node_set conjunto de nodos en un conjunto iterable, representan
+    // * nodos cerrados o nodos abiertos
+    // * @param position posicion con la que hacemos las comprobaciones
+    // * @pre debe comprobarse previamente que exista el nodo buscado. En otro caso
+    // * se devuelve null
+    // * @return el AStarNode cuya posicion es position
+    // *
+    // * TODO -- Sergio -- Usar otro tipo de estructura de datos distinta a HashSet para
+    // * que esta busqueda sea mejor que O(n)
+    // * */
+    //AStarNode getNodeByGridPosition(Iterable<AStarNode> node_set, GridPosition position){
+    //    for(AStarNode current_node : node_set){
+    //        if(current_node.get_position().equals(position)){
+    //            return current_node;
+    //        }
+    //    }
 
-    // Vemos si un nodo está en abiertos y devolvemos el índice, si no está devolvemos -1
-    private int isAbiertos (Nodo[] abiertos, Vector2d pos, Vector2d ori){
-
-        for( int i=0; i< abiertos.length; i++){
-            Vector2d posicion = abiertos[i].getPosition();
-            Vector2d orientacion = abiertos[i].getOrientacion();
-            if((posicion.x == pos.x) && (posicion.y==pos.y) && (orientacion.x==ori.x) && (orientacion.y==ori.y))
-                return i;
-
-        }
-        return -1;
-    }
-
-
-
-    // Expande un nodo y devuelve los vecinos de dicho nodo
-    ArrayList<Nodo> expandirNodo (Nodo n, StateObservation stateObs, Vector2d destino){
-        // ArrayList que vamos a devolver con los hijos del nodo
-        ArrayList<Nodo> hijos = new ArrayList<>();
-
-        // Posicion y orientacion del padre de dichos hijos
-        Vector2d posicion = n.getPosition();
-        Vector2d ori = n.getOrientacion();
-
-        // El coste del camino que lleva realizado el padre
-        int costePadre = n.getG();
-
-        Nodo hijo = null;
-
-        // Calculamos las nuevas posiciones en el caso de que sea posible llegar a dicha posicion
-        // Si no se sale del tablero
-        if (posicion.y - 1 >= 0) {
-            // Si es un muro no lo expandimos
-            if(isMuro(stateObs,(int)posicion.x, (int)posicion.y-1)){}
-            else{
-                hijo = new Nodo(new Vector2d(posicion.x, posicion.y-1), destino, n, ARRIBA, ACTIONS.ACTION_UP);
-                // Si estamos orientados a dicha casilla solo necesitaremos realizar una accion
-                if ((ori.x == ARRIBA.x) && (ori.y == ARRIBA.y)){
-                    hijo.setAccion_dup(false);
-                    hijo.setG(costePadre+1);
-                }
-                // Si no estamos orientados, giramos hacia esa casilla por lo que necesitamos
-                // realizar dos acciones (por ello el coste es dos)
-                else{
-                    hijo.setAccion_dup(true);
-                    hijo.setG(costePadre+2);
-                }
-
-                hijos.add(hijo);
-            }
-        }
-        // Vemos que no sobrepasa el alto
-        if (posicion.y + 1 <= stateObs.getObservationGrid()[0].length-1) {
-            // Procedemos como el de arriba
-            if(isMuro(stateObs,(int)posicion.x, (int)posicion.y+1)){}
-            else{
-                hijo = new Nodo(new Vector2d(posicion.x, posicion.y+1), destino, n, ABAJO, ACTIONS.ACTION_DOWN);
-                if ((ori.x == ABAJO.x) && (ori.y == ABAJO.y)){
-                    hijo.setAccion_dup(false);
-                    hijo.setG(costePadre+1);
-                }
-                else{
-                    hijo.setAccion_dup(true);
-                    hijo.setG(costePadre+2);
-                }
-
-                hijos.add(hijo);
-            }
-        }
-        if (posicion.x - 1 >= 0) {
-            if(isMuro(stateObs,(int)posicion.x-1, (int)posicion.y)){}
-            else{
-                hijo = new Nodo(new Vector2d(posicion.x - 1, posicion.y), destino, n, IZQ, ACTIONS.ACTION_LEFT);
-                if ((ori.x == IZQ.x) && (ori.y == IZQ.y)){
-                    hijo.setAccion_dup(false);
-                    hijo.setG(costePadre+1);
-                }
-                else{
-                    hijo.setAccion_dup(true);
-                    hijo.setG(costePadre+2);
-                }
-
-                hijos.add(hijo);
-            }
-        }
-        // vemos que no sobrepasa el ancho
-        if (posicion.x + 1 <= stateObs.getObservationGrid().length - 1) {
-            if(isMuro(stateObs,(int)posicion.x+1, (int)posicion.y)){}
-            else{
-                hijo = new Nodo(new Vector2d(posicion.x + 1, posicion.y), destino, n, DCHA, ACTIONS.ACTION_RIGHT);
-                if ((ori.x == DCHA.x) && (ori.y == DCHA.y)){
-                    hijo.setAccion_dup(false);
-                    hijo.setG(costePadre+1);
-                }
-                else{
-                    hijo.setAccion_dup(true);
-                    hijo.setG(costePadre+2);
-                }
-
-                hijos.add(hijo);
-            }
-        }
-
-        return hijos;
-    }
-
-    // Función A* inicial (luego iré cambiándola)
-    private Stack<ACTIONS>  calcularCamino(StateObservation stateObs, ElapsedCpuTimer elapsedTimer, Vector2d destino){
-        Stack<ACTIONS>  camino = new Stack<>();
-
-        // Calculamos la posicion actual del avatar
-        Vector2d avatar =  new Vector2d(stateObs.getAvatarPosition().x / fescala.x,
-        		stateObs.getAvatarPosition().y / fescala.y);
-        // Obtenemos la orientacion del avatar
-        Vector2d orientacion = stateObs.getAvatarOrientation();
-        // Creamos el nodo inicial
-        Nodo inicial = new Nodo(avatar, destino, orientacion, ACTIONS.ACTION_NIL);
-
-        // Creamos el vector de abiertos
-        PriorityQueue<Nodo> abiertos = new PriorityQueue<Nodo>(new NodoComparator());
-        abiertos.add(inicial);
-
-        // Creamos el vector de cerrados
-        ArrayList<Nodo> cerrados = new ArrayList<Nodo>();
-
-
-        Nodo nodo = null;
-
-        while (!abiertos.isEmpty()){
-            // Cogemos el nodo con mejor f(n)
-            nodo = abiertos.peek();
-
-            // Si el nodo es el nodo destino, termina
-            if ((nodo.getPosition().x == destino.x) && (nodo.getPosition().y == destino.y)){
-                break;
-            }
-
-            // Creamos un vector de los sucesores del nodo
-            ArrayList<Nodo> hijos = expandirNodo(nodo, stateObs, destino);
-
-            for (int i=0; i<hijos.size(); i++){
-                Nodo sucesor = hijos.get(i);
-
-                // si el sucesor es el mismo que el padre no hacemos nada
-                if(sucesor==sucesor.getPadre()){}
-                else {
-                    // Vemos si el nodo esta en cerrados y guardamos el indice
-                    int indice_c = cerrados.indexOf(sucesor);
-                    // Vemos si el nodo esta en abiertos y guardamos el indice
-                    int indice_a = isAbiertos(abiertos.toArray(new Nodo[0]),sucesor.getPosition(), sucesor.getOrientacion());
-
-                    // Si el nodo esta en cerrados
-                    if(indice_c != -1){
-                       // Vemos si el sucesor tiene menor g(n) que el que esta en cerrados
-                       if(cerrados.get(indice_c).getG() > sucesor.getG()){
-                           // si es asi lo quitamos de cerrados y lo metemos en abiertos
-                           cerrados.remove(i);
-                           abiertos.add(sucesor);
-                       }
-                    }
-                    // Si el sucesor no esta en abiertos lo añadimos
-                    else if (indice_a == -1){
-                        abiertos.add(sucesor);
-                    }
-                    // Si el sucesor esta en abiertos y tiene menor g(n) que el que esta en cerrados
-                    else if (abiertos.toArray(new Nodo[0])[indice_a].getG() > sucesor.getG()){
-                        // Borramos el nodo que teniamos en abiertos y añadimos el nuevo sucesor
-                        abiertos.remove(abiertos.toArray(new Nodo[0])[indice_a]);
-                        abiertos.add(sucesor);
-                    }
-
-                }
-            }
-
-            // Eliminamos el nodo que acabamos de explorar de abiertos
-            abiertos.remove(nodo);
-
-
-
-        }
-        // Si no llegase a encontrar el camino al destino devolvemos ACTION_NIL
-        if((nodo.getPosition().x!=destino.x)||(nodo.getPosition().y!=destino.y)){
-            camino.add(ACTIONS.ACTION_NIL);
-
-        }
-        else{
-            // Calculamos el camino viendo la accion que hemos necesitado para llegar a cada nodo
-            while(nodo.getPadre() != null){
-                camino.push(nodo.getAccion());
-                // En el caso en el que hayamos necesitado repetir la accion al estar en otra orientacion,
-                // la volvemos a añadir
-                if(nodo.isAccion_dup())
-                    camino.push(nodo.getAccion());
-                nodo = nodo.getPadre();
-            }
-        }
-
-        return camino;
-
-    }
-
+    //    // No se ha encontrado el nodo, se devuelve null
+    //    // Esto no deberia pasar por las precondiciones
+    //    return null;
+    //}
 }

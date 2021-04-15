@@ -51,24 +51,28 @@ public class GridPosition{
      * Codigo basado en el dado en el tutorial de GVGAI de los profesores de practicas
      * */
     GridPosition(Vector2d position, StateObservation stateObs){
-        // // Factor de escala de pixeles a grid
-        // // TODO -- Sergio -- sacar el factor de escala porque es repetir calculos
-        // Vector2d vector_escala = new Vector2d(
-        //     stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
-        //     stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length
-        // );
+        // Factor de escala de pixeles a grid
+        Vector2d vector_escala = new Vector2d(
+            stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
+            stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length
+        );
 
-        // // Usamos el vector de escala para realizar la conversion
-        // this.x = (int) Math.floor(position.x / vector_escala.x);
-        // this.y = (int) Math.floor(position.y / vector_escala.y);
+        // Usamos el vector de escala para realizar la conversion
+        this.x = (int) Math.floor(position.x / vector_escala.x);
+        this.y = (int) Math.floor(position.y / vector_escala.y);
+    }
 
-        // TODO -- Sergio -- borrar este codigo porque es de lucia
-        //Calculamos el factor de escala entre mundos (pixeles -> grid)
-        Vector2d fescala = new Vector2d(stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
-                stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length);
-
-        this.x = (int) Math.floor(position.x / fescala.x);
-        this.y = (int) Math.floor(position.y / fescala.y);
+    /**
+     * A partir de una posicion en pixeles, genera la posicion en el grid.
+     * @param position la posicion en pixeles a convertir
+     * @param scale_factor factor de escala para realizar la conversion
+     *
+     * Codigo basado en el dado en el tutorial de GVGAI de los profesores de practicas
+     * */
+    GridPosition(Vector2d position, Vector2d scale_factor){
+        // Usamos el vector de escala para realizar la conversion
+        this.x = (int) Math.floor(position.x / scale_factor.x);
+        this.y = (int) Math.floor(position.y / scale_factor.y);
     }
 
     /**
@@ -78,11 +82,9 @@ public class GridPosition{
      * del mundo y con ello hacer la conversion
      *
      * Codigo basado en el dado en el tutorial de GVGAI de los profesores de practicas
-     * TODO -- Bug -- creo que aqui hay fallos
      * */
     GridPosition(int pixel_x, int pixel_y, StateObservation stateObs){
         // Factor de escala de pixeles a grid
-        // TODO -- Sergio -- sacar el factor de escala porque es repetir calculos
         Vector2d vector_escala = new Vector2d(
             stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
             stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length
@@ -148,17 +150,6 @@ public class GridPosition{
         // Casteamos y devolvemos la igualdad que queremos
         GridPosition o_casted = (GridPosition) o;
         return this.x == o_casted.x && this.y == o_casted.y;
-    }
-
-    /**
-     * Sobreescribimos el codigo del hash, porque en otro caso se usa el valor
-     * de la referencia. Gracias a [2]
-     *
-     * @return el entero sobre el que vamos a hacer hash
-     * */
-    @Override
-    public int hashCode(){
-        return this.x * this.y;
     }
 
     /**
