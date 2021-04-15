@@ -279,14 +279,7 @@ public class Agent extends core.player.AbstractPlayer{
             this.plan = this.a_star(stateObs, elapsedTimer);
         }
 
-        // Comprobacion extra de seguridad. No deberia ocurrir pero por si acaso añado esta comprobacion
-        // para que el programa no explote
-        if(this.plan != null || this.plan.isEmpty() == false){
-            return this.plan.pop();
-        }else{
-            System.out.println("EWWWWW");
-            return Types.ACTIONS.ACTION_NIL;
-        }
+        return this.plan.pop();
     }
 
     public Types.ACTIONS level3_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
@@ -493,7 +486,7 @@ public class Agent extends core.player.AbstractPlayer{
             }
 
             // Generamos los hijos e iteramos sobre ellos
-            ArrayList<AStarNode> childs = current.generate_childs(this.world_dimensions_grid, stateObs);
+            ArrayList<AStarNode> childs = current.generate_childs(this.world_dimensions_grid, this.inmovable_grid_positions);
             for(AStarNode child: childs){
                 // Comprobamos que el hijo no sea lo mismo que el padre
                 if(child.isSameAsParent() == true){

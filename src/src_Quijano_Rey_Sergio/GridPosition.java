@@ -175,7 +175,7 @@ public class GridPosition{
      * @param world_dimensions_grid dimensiones del mundo, para comprobar si nos salimos del mapa
      * @param inmovable_grid_positions muros del mundo que no podemos atravesar
      * */
-    public boolean isValidToMove(GridPosition world_dimensions_grid, StateObservation stateObs){
+    public boolean isValidToMove(GridPosition world_dimensions_grid, ArrayList<GridPosition> inmovable_grid_positions){
         // Nos salimos del mapa por arriba o por la izquierda
         if(this.x < 0 || this.y < 0){
             return false;
@@ -187,17 +187,8 @@ public class GridPosition{
         }
 
         // Comprobamos que no sea una posicion inamovible
-        //// TODO -- Sergio -- cuidado porque esto puede estar mal. Lucia lo hace mucho mas facil en isMuro
-        //if(inmovable_grid_positions.contains(this)){
-        //    return false;
-        //}
-
-        int x = this.x;
-        int y = this.y;
-        if (stateObs.getObservationGrid()[x][y].size()>0){
-            if (stateObs.getObservationGrid()[x][y].get(0).itype == 0) {
-                return false;
-            }
+        if(inmovable_grid_positions.contains(this)){
+            return false;
         }
 
         // Todas las comprobaciones han pasado sin problemas
