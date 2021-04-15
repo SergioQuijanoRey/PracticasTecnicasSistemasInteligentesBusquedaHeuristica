@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.lang.Exception;
 import java.util.PriorityQueue;
+import java.util.Stack;
 import java.awt.Dimension;
 import java.util.Collections;   // Para iterar y tomar valores minimos
 
@@ -373,53 +374,163 @@ public class Agent extends core.player.AbstractPlayer{
     }
 
     /**
-     * Algoritmo A* para devolver una lista de posiciones para llevar al jugador
-     * al objetivo marcado.
+     * Algoritmo A* para devolver una lista de acciones que llevan al jugador al objetivo marcado
      *
      * @param stateObs estado del mundo
      * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
      * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
-     * @return la lista ordenada de posiciones en el grid que representan el camino
-     *
-     * Se devuelven posiciones. Por tanto, el metodo que llame a este metodo es
-     * responsable de convertir las posiciones en acciones
+     * @return la lista ordenada de acciones a ejecutar
      *
      * Cuando no tenemos un objetivo, se llama al metodo que elige el siguiente
      * objetivo
      *
+     * Devolvemos un Stack porque asi es mas facil de extraer acciones de forma rapida en los otros
+     * metodos. Se podria haber usado un ArrayList pero asi creo que va a funcionar mas rapido. Ademas
+     * es mucho mas facil generar el camino sin tener que invertir un ArrayList (que llevaba mucho
+     * mas tiempo)
+     *
      * TODO -- comprobar los tiempos y parar cuando quede poco tiempo de computo
-     * TODO -- este A* esta mal hecho, porque con otras planificaciones si que va
      * */
-    ArrayList<GridPosition> a_star(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        ArrayList<GridPosition> path = new ArrayList<GridPosition>();
-        path.add(new GridPosition(0, 0));
+    Stack<Types.ACTIONS> a_star(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        // No tenemos objetivo, hay que elegir uno
+        if(this.current_objective == null){
+            this.choose_objective(stateObs, elapsedTimer);
+        }
+
+        // Usamos un priority queue para los nodos abiertos. Esto nos facilita tomar los nodos ordenados
+        // por su funcion f = g + h  de forma sencilla y semi-automatica (mirar el codigo en
+        // AStarNodeComparator)
+        PriorityQueue<AStarNode> open = new PriorityQueue<AStarNode>(new AStarNodeComparator());
+
+        // Añadimos el nodo inicial del que va a partir la busqueda
+        // Para ello, tenemos que hacer unas cuantas consultas a GVGAI a traves de stateObs
+        GridPosition starting_position = new GridPosition(stateObs.getAvatarPosition(), this.scale_factor);
+        Orientation starting_orientation = new Orientation(stateObs.getAvatarOrientation());
+        open.add(new AStarNode(starting_position, new GridPosition(this.current_objective, this.scale_factor), starting_orientation));
+
+        // Conjunto de nodos cerrados
+        // Uso un ArrayList porque he intentado usar otras estructuras de datos que me han dado
+        // muchos problemas, y funciona en un tiempo razonable asi que no tengo la necesidad de cambiar
+        // esta estructura
+        ArrayList<AStarNode> closed = new ArrayList<AStarNode>();
+
+        // TODO -- Sergio -- meter esto dentro del while para que sea mas idiomatico
+        // TODO -- Sergio -- Hace que se parezca demasiado al codigo de lucia
+        AStarNode current = null;
+
+        // Iteramos en la busqueda
+        while(open.isEmpty() == false){
+            // Tommamos el mejor nodo de abiertos y lo eliminamos del conjunto
+            current = open.poll();
+
+            // Comprobamos que el nodo sea el nodo solucion
+            if(current.isObjective() == true){
+                break;
+            }
+
+            // Generamos los hijos e iteramos sobre ellos
+            for(AStarNode child: current.generate_childs(this.world_dimensions_grid, this.inmovable_grid_positions)){
+                // Comprobamos que el hijo no sea lo mismo que el padre
+                if(child.isSameAsParent() == true){
+                    continue;
+                }
+
+                // Si el nodo hijo ya ha sido explorado, y por tanto esta en cerrados
+                if(closed.contains(child)){
+                    // Tomamos el nodo que ya estaba en cerrados
+                    int already_explored_node_index = closed.indexOf(child);
+                    AStarNode already_explored_node = closed.get(already_explored_node_index);
+
+                    // Comprobamos cual de los dos nodos tiene mejor g
+                    // Si el nodo hijo tiene menor coste, quitamos el nodo de cerrados y lo metemos
+                    // en abiertos para que sea explorado mas tarde
+                    if(child.getCost() < already_explored_node.getCost()){
+                        closed.remove(already_explored_node_index);
+                        open.add(child);
+                    }
+                    continue;
+                }
+
+                // Miramos si el hijo esta o no esta en abiertos
+                AStarNode already_open_node = getNodeByGridPositionAndOrientation(open, child.getPosition(), child.getOrientation());
+                boolean already_open = already_open_node != null;
+
+                // El hijo no ha sido explorado porque no esta en cerrados
+                // Si el hijo no esta en abiertos, logicamente lo que tenemos que hacer es añadirlo
+                // para que mas tarde sea explorado
+                if(already_open == false){
+                    open.add(child);
+                    continue;
+                }
+
+                // Hay otro nodo en abiertos con la misma orientacion y posicion
+                // Tenemos que quedarnos con el nodo de mejor valor de coste
+                if(already_open == true){
+                    if(child.getCost() < already_open_node.getCost()){
+                        // Cambiamos el que ya estaba por el nuevo nodo
+                        open.remove(already_open_node);
+                        open.add(child);
+                    }
+                }
+            }
+        }
+
+        // Comprobamos si hemos llegado a la solucion
+        // Si no hemos llegado, devolvemos la accion nula para que el programa no de un fallo
+        if(current.isObjective() == false){
+            Stack<Types.ACTIONS> empty_path = new Stack<Types.ACTIONS>();
+            empty_path.push(Types.ACTIONS.ACTION_NIL);
+            return empty_path;
+        }
+
+        // Devolvemos el conjunto de acciones a partir del nodo solucion
+        return reconstruct_path_to_actions(current);
+    }
+
+    /**
+     * A partir de un nodo AStarNode solucion, reconstruye el camino que lleva desde la posicion
+     * del avatar hasta la posicion objetivo
+     * @param solution_node el nodo solucion
+     * */
+    Stack<Types.ACTIONS> reconstruct_path_to_actions(AStarNode solution_node){
+        Stack<Types.ACTIONS> path = new Stack<Types.ACTIONS>();
+        AStarNode curr = solution_node;
+        while(curr.getParent() != null){
+
+            // Añadimos una o dos acciones segun se necesite
+            for(Types.ACTIONS action: curr.getActions()){
+                path.push(action);
+            }
+
+            // Tomamos el siguiente elemento del camino
+            curr = curr.getParent();
+        }
+
         return path;
     }
 
-    // TODO -- Sergio -- no estoy usando esta funcion
-    ///**
-    // * Funcion auxiliar para encontrar el nodo que representa una determinada
-    // * posicion.
-    // *
-    // * @param node_set conjunto de nodos en un conjunto iterable, representan
-    // * nodos cerrados o nodos abiertos
-    // * @param position posicion con la que hacemos las comprobaciones
-    // * @pre debe comprobarse previamente que exista el nodo buscado. En otro caso
-    // * se devuelve null
-    // * @return el AStarNode cuya posicion es position
-    // *
-    // * TODO -- Sergio -- Usar otro tipo de estructura de datos distinta a HashSet para
-    // * que esta busqueda sea mejor que O(n)
-    // * */
-    //AStarNode getNodeByGridPosition(Iterable<AStarNode> node_set, GridPosition position){
-    //    for(AStarNode current_node : node_set){
-    //        if(current_node.get_position().equals(position)){
-    //            return current_node;
-    //        }
-    //    }
+    /**
+     * Funcion auxiliar para encontrar el nodo que representa una determinada
+     * posicion y orientacion
+     *
+     * @param node_set conjunto de nodos en un conjunto iterable, representan
+     * nodos cerrados o nodos abiertos
+     * @param position posicion con la que hacemos las comprobaciones
+     * @pre debe comprobarse previamente que exista el nodo buscado. En otro caso
+     * se devuelve null
+     * @return el AStarNode cuya posicion es position y orientacion es orientation
+     *
+     * TODO -- Sergio -- mover a funciones auxiliares
+     * */
+    AStarNode getNodeByGridPositionAndOrientation(Iterable<AStarNode> node_set, GridPosition position, Orientation orientation){
+        for(AStarNode current_node : node_set){
+            if(current_node.getPosition().equals(position) && current_node.getOrientation().equals(orientation)){
+                return current_node;
+            }
+        }
 
-    //    // No se ha encontrado el nodo, se devuelve null
-    //    // Esto no deberia pasar por las precondiciones
-    //    return null;
-    //}
+        // No se ha encontrado el nodo, se devuelve null
+        // Esto no deberia pasar por las precondiciones
+        return null;
+    }
 }

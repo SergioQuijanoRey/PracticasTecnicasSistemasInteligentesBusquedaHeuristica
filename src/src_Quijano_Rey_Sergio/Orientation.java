@@ -2,6 +2,7 @@ package src_Quijano_Rey_Sergio;
 
 import tools.Vector2d;
 import src_Quijano_Rey_Sergio.GridPosition;
+import ontology.Types;
 
 /**
  * Clase que representa comodamente la orientacion de un jugador.
@@ -37,6 +38,30 @@ public class Orientation{
             this.down = true;
         }
     }
+
+    /**
+     * Orientacion en formato enteros.
+     * Util cuando queremos ver la orientacion de un delta
+     * */
+    Orientation(int x_delta, int y_delta){
+        GridPosition orientation = new GridPosition(x_delta, y_delta);
+        if(orientation.getX() < 0){
+            this.left = true;
+        }
+
+        if(orientation.getX() > 0){
+            this.right = true;
+        }
+
+        if(orientation.getY() < 0){
+            this.up = true;
+        }
+
+        if(orientation.getY() > 0){
+            this.down = true;
+        }
+    }
+
 
     /**
      * @param orientation orientacion en formato GridPosition
@@ -141,25 +166,28 @@ public class Orientation{
         return activated_orientations == 0 || activated_orientations == 1;
     }
 
-    @Override
-    public int hashCode(){
+    /**
+     * Devuelve la accion asociada a esta orientacion (ie. si mira a la izquierda devuelve la accion
+     * moverse a la izquierda)
+     * */
+    public Types.ACTIONS getAction(){
         if(this.left){
-            return 1;
+            return Types.ACTIONS.ACTION_LEFT;
         }
 
         if(this.right){
-            return 2;
+            return Types.ACTIONS.ACTION_RIGHT;
         }
 
         if(this.up){
-            return 3;
+            return Types.ACTIONS.ACTION_UP;
         }
 
         if(this.down){
-            return 4;
+            return Types.ACTIONS.ACTION_DOWN;
         }
 
-        return 5;
-    }
+        return Types.ACTIONS.ACTION_NIL;
 
+    }
 }
