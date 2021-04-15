@@ -504,6 +504,15 @@ public class Agent extends core.player.AbstractPlayer{
                 break;
             }
 
+            // Comprobacion de tiempos. Lo hago fuera del bucle de los hijos tambien porque el proceso
+            // de generar los hijos puede considerarse muy lento
+            if(this.can_we_continue(elapsedTimer) == false){
+                System.out.println("GUARDANDO CONTENIDOS EN EL BUFFER");
+                this.a_star_was_succesfull = false;
+                this.save_progress(open, closed);
+                return construct_nil_path();
+            }
+
             // Generamos los hijos e iteramos sobre ellos
             ArrayList<AStarNode> childs = current.generate_childs(this.world_dimensions_grid, this.inmovable_grid_positions);
             for(AStarNode child: childs){
