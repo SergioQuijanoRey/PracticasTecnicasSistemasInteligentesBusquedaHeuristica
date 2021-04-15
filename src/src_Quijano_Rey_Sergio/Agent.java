@@ -56,7 +56,6 @@ public class Agent extends core.player.AbstractPlayer{
     //==============================================================================================
     Vector2d fescala;
     Vector2d portal;
-    Vector2d gema = null;
 
     final Vector2d ARRIBA = new Vector2d(0.0,-1.0);
     final Vector2d ABAJO = new Vector2d(0.0,1.0);
@@ -86,14 +85,14 @@ public class Agent extends core.player.AbstractPlayer{
         portal.y = Math.floor(portal.y / fescala.y);
 
         if (stateObs.getResourcesPositions(stateObs.getAvatarPosition())!= null){
-            this.gema = choose_objective_as_closest_gem(stateObs, elapsedTimer);
-            this.gema.x = Math.floor(gema.x / fescala.x);
-            this.gema.y = Math.floor(gema.y / fescala.y);
-            camino = calcularCamino(stateObs,elapsedTimer,this.gema);
+            this.current_objective = choose_objective_as_closest_gem(stateObs, elapsedTimer);
+            this.current_objective.x = Math.floor(this.current_objective.x / fescala.x);
+            this.current_objective.y = Math.floor(this.current_objective.y / fescala.y);
+            camino = calcularCamino(stateObs,elapsedTimer,this.current_objective);
             num_gemas ++;
         }
-        if (this.gema != null){
-            this.camino = calcularCamino(stateObs,elapsedTimer,this.gema);
+        if (this.current_objective != null){
+            this.camino = calcularCamino(stateObs,elapsedTimer,this.current_objective);
         }
         else{
             camino = calcularCamino(stateObs,elapsedTimer, portal);
@@ -113,10 +112,10 @@ public class Agent extends core.player.AbstractPlayer{
         }
         else{
             if (stateObs.getResourcesPositions(stateObs.getAvatarPosition())!= null && num_gemas<9){
-            this.gema = choose_objective_as_closest_gem(stateObs, elapsedTimer);
-            this.gema.x = Math.floor(this.gema.x / fescala.x);
-            this.gema.y = Math.floor(this.gema.y / fescala.y);
-            camino = calcularCamino(stateObs,elapsedTimer,this.gema);
+            this.current_objective = choose_objective_as_closest_gem(stateObs, elapsedTimer);
+            this.current_objective.x = Math.floor(this.current_objective.x / fescala.x);
+            this.current_objective.y = Math.floor(this.current_objective.y / fescala.y);
+            camino = calcularCamino(stateObs,elapsedTimer,this.current_objective);
             num_gemas ++;
             return camino.pop();
             }
