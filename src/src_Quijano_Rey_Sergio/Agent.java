@@ -440,7 +440,7 @@ public class Agent extends core.player.AbstractPlayer{
 
         // Iteramos en la busqueda
         while(open.isEmpty() == false){
-            // Tommamos el mejor nodo de abiertos y lo eliminamos del conjunto
+            // Tommamos el mejor nodo de abiertos y lo eliminamos del conjunto, que añadimos a cerrados
             current = open.poll();
 
             // Comprobamos que el nodo sea el nodo solucion
@@ -450,10 +450,10 @@ public class Agent extends core.player.AbstractPlayer{
             }
 
             // Generamos los hijos e iteramos sobre ellos
-            for(AStarNode child: current.generate_childs(this.world_dimensions_grid, this.inmovable_grid_positions)){
+            ArrayList<AStarNode> childs = current.generate_childs(this.world_dimensions_grid, this.inmovable_grid_positions);;
+            for(AStarNode child: childs){
                 // Comprobamos que el hijo no sea lo mismo que el padre
                 if(child.isSameAsParent() == true){
-                    System.out.println("El hijo es lo mismo que el parent");;
                     continue;
                 }
 
@@ -477,7 +477,6 @@ public class Agent extends core.player.AbstractPlayer{
                 AStarNode already_open_node = getNodeByGridPositionAndOrientation(open, child.getPosition(), child.getOrientation());
                 boolean already_open = already_open_node != null;
 
-                System.out.println("Already opne vale " + already_open);
 
                 // El hijo no ha sido explorado porque no esta en cerrados
                 // Si el hijo no esta en abiertos, logicamente lo que tenemos que hacer es añadirlo
@@ -499,7 +498,11 @@ public class Agent extends core.player.AbstractPlayer{
                 }
             }
 
+            // Añadimos el nodo actual a cerrados porque ya ha sido explorado
+            closed.add(current);
+
             System.out.println("Tenemos " + open.size() + " nodos abiertos");
+            System.out.println("Tenemos " + closed.size() + " nodos cerrados");
         }
 
         // Comprobamos si hemos llegado a la solucion

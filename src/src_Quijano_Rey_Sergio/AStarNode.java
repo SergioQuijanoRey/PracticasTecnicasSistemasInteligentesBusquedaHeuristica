@@ -152,14 +152,10 @@ public class AStarNode{
             int x_delta = delta[0];
             int y_delta = delta[1];
 
-            System.out.println("Considerando delta " + x_delta + ", " + y_delta);
-
             // Generamos la nueva posicion y comprobamos que sea valido
             GridPosition new_position = new GridPosition(this.position.getX() + x_delta, this.position.getY() + y_delta);
             if(new_position.isValidToMove(world_dimensions_grid, inmovable_grid_positions) == false){
                 // TODO -- Sergio -- no mostrar mensajes por pantalla
-                System.out.println("Hijo no valido:");
-                System.out.println("\tDeltas: " + x_delta + ", " + y_delta);
                 continue;
             }
 
@@ -172,7 +168,7 @@ public class AStarNode{
 
             // Necesitamos dos pasos?
             boolean new_needs_two_steps = false;
-            if(this.orientation != new_orientation){
+            if(this.orientation.equals(new_orientation) == false){
                 new_needs_two_steps = true;
             }
 
@@ -181,12 +177,13 @@ public class AStarNode{
 
             // Nuevo coste
             int new_cost = this.current_cost + 1;
-            if(needs_two_steps == true){
+            if(new_needs_two_steps == true){
                 new_cost = new_cost + 1;
             }
 
-            // A partir de los calculos generamos el nuevo nodo hijo
+            // A partir de los calculos generamos el nuevo nodo hijo y lo añadimos
             AStarNode child = new AStarNode(new_position, this.objective, new_orientation, this, new_cost, new_action, new_needs_two_steps);
+            valid_childs.add(child);
         }
 
         return valid_childs;
