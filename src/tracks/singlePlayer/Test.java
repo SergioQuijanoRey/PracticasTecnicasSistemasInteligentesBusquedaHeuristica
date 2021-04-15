@@ -42,7 +42,7 @@ public class Test {
 
         // En principio solo deberia ir del 0 al 4, pero como hemos añadido mapas
         // personalizados por los profesores, podemos poner un valor hasta 10
-		int levelIdx = 5;
+		int levelIdx = 6;
 
 		String gameName = games[gameIdx][1];
 		String game = games[gameIdx][0];;

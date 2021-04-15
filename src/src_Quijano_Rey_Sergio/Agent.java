@@ -86,14 +86,14 @@ public class Agent extends core.player.AbstractPlayer{
         portal.y = Math.floor(portal.y / fescala.y);
 
         if (stateObs.getResourcesPositions(stateObs.getAvatarPosition())!= null){
-            gema = choose_objective_as_closest_gem(stateObs, elapsedTimer);
-            gema.x = Math.floor(gema.x / fescala.x);
-            gema.y = Math.floor(gema.y / fescala.y);
-            camino = calcularCamino(stateObs,elapsedTimer,gema);
+            this.gema = choose_objective_as_closest_gem(stateObs, elapsedTimer);
+            this.gema.x = Math.floor(gema.x / fescala.x);
+            this.gema.y = Math.floor(gema.y / fescala.y);
+            camino = calcularCamino(stateObs,elapsedTimer,this.gema);
             num_gemas ++;
         }
-        if (gema != null){
-            camino = calcularCamino(stateObs,elapsedTimer,gema);
+        if (this.gema != null){
+            this.camino = calcularCamino(stateObs,elapsedTimer,this.gema);
         }
         else{
             camino = calcularCamino(stateObs,elapsedTimer, portal);
@@ -113,10 +113,10 @@ public class Agent extends core.player.AbstractPlayer{
         }
         else{
             if (stateObs.getResourcesPositions(stateObs.getAvatarPosition())!= null && num_gemas<9){
-            gema = choose_objective_as_closest_gem(stateObs, elapsedTimer);
-            gema.x = Math.floor(gema.x / fescala.x);
-            gema.y = Math.floor(gema.y / fescala.y);
-            camino = calcularCamino(stateObs,elapsedTimer,gema);
+            this.gema = choose_objective_as_closest_gem(stateObs, elapsedTimer);
+            this.gema.x = Math.floor(this.gema.x / fescala.x);
+            this.gema.y = Math.floor(this.gema.y / fescala.y);
+            camino = calcularCamino(stateObs,elapsedTimer,this.gema);
             num_gemas ++;
             return camino.pop();
             }
