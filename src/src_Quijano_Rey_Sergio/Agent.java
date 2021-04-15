@@ -85,6 +85,15 @@ public class Agent extends core.player.AbstractPlayer{
     private ArrayList<GridPosition> inmovable_grid_positions = null;
 
     /**
+     * Acciones a realizar para ir de un punto a otro.
+     * Usamos un stack porque es rapido de tomar elementos del final y eliminarlos y porque a la hora
+     * de reconstruir un camino a partir del ultimo nodo de A* simplifica mucho las cosas (usando un
+     * ArrayList tenia que invertir la lista o tomar elementos del principio y borrarlos en vez
+     * de tomarlos del final)
+     * */
+    private Stack<Types.ACTIONS> plan = null;
+
+    /**
      * Constructor del agente.
      * Tiene que recibir esos parametros de entrada porque asi se indica en [1]
      * @param so estado del mundo, dado como una observacion
@@ -216,7 +225,18 @@ public class Agent extends core.player.AbstractPlayer{
      * @param elapsedTimer timer para saber cuanto tiempo de computo nos queda
      * */
     public Types.ACTIONS level1_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        return Types.ACTIONS.ACTION_DOWN;
+        // Seleccionamos el objetivo
+        if(this.current_objective == null){
+            this.choose_objective(stateObs, elapsedTimer);
+        }
+
+        if(this.plan == null || this.plan.isEmpty() == true){
+            this.plan = this.a_star(stateObs, elapsedTimer);
+            // No hace falta hacer this.objective == null porque solo tenemos que alcanzar el portal,
+            // el objetivo no cambia como en otros niveles
+        }
+
+        return this.plan.pop();
     }
 
     public Types.ACTIONS level2_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
@@ -425,6 +445,7 @@ public class Agent extends core.player.AbstractPlayer{
 
             // Comprobamos que el nodo sea el nodo solucion
             if(current.isObjective() == true){
+                System.out.println("HEMOS ENCONTRADO EL OBJETIVO");
                 break;
             }
 
@@ -432,6 +453,7 @@ public class Agent extends core.player.AbstractPlayer{
             for(AStarNode child: current.generate_childs(this.world_dimensions_grid, this.inmovable_grid_positions)){
                 // Comprobamos que el hijo no sea lo mismo que el padre
                 if(child.isSameAsParent() == true){
+                    System.out.println("El hijo es lo mismo que el parent");;
                     continue;
                 }
 
@@ -455,10 +477,13 @@ public class Agent extends core.player.AbstractPlayer{
                 AStarNode already_open_node = getNodeByGridPositionAndOrientation(open, child.getPosition(), child.getOrientation());
                 boolean already_open = already_open_node != null;
 
+                System.out.println("Already opne vale " + already_open);
+
                 // El hijo no ha sido explorado porque no esta en cerrados
                 // Si el hijo no esta en abiertos, logicamente lo que tenemos que hacer es añadirlo
                 // para que mas tarde sea explorado
                 if(already_open == false){
+                    System.out.println("Añadimos un nodo al conjunto de abiertos");
                     open.add(child);
                     continue;
                 }
@@ -473,17 +498,25 @@ public class Agent extends core.player.AbstractPlayer{
                     }
                 }
             }
+
+            System.out.println("Tenemos " + open.size() + " nodos abiertos");
         }
 
         // Comprobamos si hemos llegado a la solucion
         // Si no hemos llegado, devolvemos la accion nula para que el programa no de un fallo
-        if(current.isObjective() == false){
-            Stack<Types.ACTIONS> empty_path = new Stack<Types.ACTIONS>();
-            empty_path.push(Types.ACTIONS.ACTION_NIL);
-            return empty_path;
-        }
+        //if(current.isObjective() == false){
+        //    System.out.println("El objetivo actual no es el objetivo buscado");
+        //    System.out.println("La posicion final es " + current.getPosition());
+        //    System.out.println("El objetivo era " + new GridPosition(this.current_objective, this.scale_factor));
+        //    System.out.println("A* devuelve accion nula");
+        //    System.out.println("");
+        //    Stack<Types.ACTIONS> empty_path = new Stack<Types.ACTIONS>();
+        //    empty_path.push(Types.ACTIONS.ACTION_NIL);
+        //    return empty_path;
+        //}
 
         // Devolvemos el conjunto de acciones a partir del nodo solucion
+        System.out.println("A* ha encontrado un buen objetivo que estamos devolviendo");
         return reconstruct_path_to_actions(current);
     }
 

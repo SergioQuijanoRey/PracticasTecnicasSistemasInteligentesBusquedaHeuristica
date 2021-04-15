@@ -152,10 +152,15 @@ public class AStarNode{
             int x_delta = delta[0];
             int y_delta = delta[1];
 
+            System.out.println("Considerando delta " + x_delta + ", " + y_delta);
+
             // Generamos la nueva posicion y comprobamos que sea valido
             GridPosition new_position = new GridPosition(this.position.getX() + x_delta, this.position.getY() + y_delta);
             if(new_position.isValidToMove(world_dimensions_grid, inmovable_grid_positions) == false){
-                break;
+                // TODO -- Sergio -- no mostrar mensajes por pantalla
+                System.out.println("Hijo no valido:");
+                System.out.println("\tDeltas: " + x_delta + ", " + y_delta);
+                continue;
             }
 
             // La posicion es valida asi que generamos el nodo asociado a esa posicion para añadirlo
@@ -196,7 +201,6 @@ public class AStarNode{
 
     /**
      * Devuelve las acciones para llegar desde el padre hasta el hijo.
-     * Puede devolver una o dos acciones segun sea necesario
      * */
     public ArrayList<Types.ACTIONS> getActions(){
         ArrayList<Types.ACTIONS> actions = new ArrayList<Types.ACTIONS>();
