@@ -66,6 +66,16 @@ public class Agent extends core.player.AbstractPlayer{
     int nivel = 1;
     int num_gemas = 0;
 
+
+
+    /**
+     * Objetivo actual a perseguir.
+     * Van a ser gemas y portales por los que escapar
+     * Cuando current_objective = null, no tenemos objetivo y tendremos que decidir
+     * cual queremos que sea nuestro siguiente objetivo
+     * */
+    private Vector2d current_objective = null;
+
     public Agent (StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
         //Calculamos el factor de escala entre mundos (pixeles -> grid)
         fescala = new Vector2d(stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
@@ -76,7 +86,7 @@ public class Agent extends core.player.AbstractPlayer{
         portal.y = Math.floor(portal.y / fescala.y);
 
         if (stateObs.getResourcesPositions(stateObs.getAvatarPosition())!= null){
-            gema = next_gema(stateObs);
+            gema = choose_objective_as_closest_gem(stateObs, elapsedTimer);
             gema.x = Math.floor(gema.x / fescala.x);
             gema.y = Math.floor(gema.y / fescala.y);
             camino = calcularCamino(stateObs,elapsedTimer,gema);
@@ -103,7 +113,7 @@ public class Agent extends core.player.AbstractPlayer{
         }
         else{
             if (stateObs.getResourcesPositions(stateObs.getAvatarPosition())!= null && num_gemas<9){
-            gema = next_gema(stateObs);
+            gema = choose_objective_as_closest_gem(stateObs, elapsedTimer);
             gema.x = Math.floor(gema.x / fescala.x);
             gema.y = Math.floor(gema.y / fescala.y);
             camino = calcularCamino(stateObs,elapsedTimer,gema);
@@ -118,16 +128,44 @@ public class Agent extends core.player.AbstractPlayer{
         return ACTIONS.ACTION_NIL;
     }
 
-    // Gema a la que ir más cercana con la distancia Manhattan
-    public Vector2d next_gema(StateObservation stateObs){
-        ArrayList<Integer> distancias = new ArrayList<>();
-        Vector2d pos = new Vector2d(stateObs.getAvatarPosition().x / fescala.x, stateObs.getAvatarPosition().y / fescala.y);
-        for (Observation gema : stateObs.getResourcesPositions()[0]){
-            distancias.add((int)(Math.abs((Math.floor(gema.position.x / fescala.x)) - pos.x) + Math.abs((Math.floor(gema.position.y / fescala.y))-pos.y)));
+    /**
+     * Establece la gema mas cercano al jugador como objetivo actual.
+     * Cuidado con la cercania, porque GVGAI devuelve un array con las gemas ordenadas por distancia,
+     * pero usando la distancia euclidea. Asi que hay que hacer las comprobaciones de las distancias
+     * a mano computando la distancia manhattan
+     *
+     * @param stateObs estado del mundo
+     * @param elapsedTimer para conocer cuanto tiempo hemos consumido. Permite
+     * hacer consultas sobre el tiempo consumido o el tiempo que tenemos restante
+     * */
+    Vector2d choose_objective_as_closest_gem(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        System.out.println("==============> Calculando la gema mas cercana");
+        // Posicion del jugador. Para hacer la comparacion con las posiciones de las gemas
+        // Usamos gridposition para la distancia manhattan de forma sencilla
+        Vector2d player_position = stateObs.getAvatarPosition();
+        GridPosition player_grid_position = new GridPosition(player_position, stateObs);
+
+        // Gemas actuales del mundo. Hacemos esto para no tener que hacer recalculos
+        ArrayList<Observation> curr_gems = stateObs.getResourcesPositions()[0];
+
+        // Iteramos sobre las gemas calculando las distancias
+        ArrayList<Integer> manhattan_distances = new ArrayList<Integer>();
+        for(Observation gem: curr_gems){
+            GridPosition gem_grid_position = new GridPosition(gem.position, stateObs);
+            Integer curr_distance = GridPosition.manhattan_distance(player_grid_position, gem_grid_position);
+            manhattan_distances.add(curr_distance);
         }
-        int minIndex = distancias.indexOf(Collections.min(distancias));
-        return stateObs.getResourcesPositions()[0].get(minIndex).position;
+
+        // Tomo el indice de la gema que esta mas cercana con la distancia manhattan
+        int index_of_closest_gem = manhattan_distances.indexOf(Collections.min(manhattan_distances));
+
+        // Establecemos la gema como objetivo actual
+        this.current_objective = curr_gems.get(index_of_closest_gem).position;
+
+        // TODO -- Sergio -- En el codigo original no tenia que hacer el return
+        return this.current_objective;
     }
+
     // Vemos si la casilla es un muro
     public boolean isMuro (StateObservation stateObs, int x, int y){
             if (stateObs.getObservationGrid()[x][y].size()>0){

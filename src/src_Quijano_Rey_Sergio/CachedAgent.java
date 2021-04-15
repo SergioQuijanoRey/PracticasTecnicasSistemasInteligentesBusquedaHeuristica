@@ -46,7 +46,7 @@ import src_Quijano_Rey_Sergio.Orientation;
  * Tenemos que extender core.player.AbstractPlayer.java como se indica en [1]
  * @author Sergio Quijano Rey
  * */
-public class Agent extends core.player.AbstractPlayer{
+public class CachedAgent extends core.player.AbstractPlayer{
 
     /**
      * Nivel en el que nos encontramos.
@@ -107,7 +107,7 @@ public class Agent extends core.player.AbstractPlayer{
      *
      * Tiene un segundo de computo
      * */
-    public Agent(StateObservation so, ElapsedCpuTimer elapsedTimer){
+    public CachedAgent(StateObservation so, ElapsedCpuTimer elapsedTimer){
 
         try {
             // Mirando si hay gemas y enemigos, establecemos el nivel en el que
