@@ -94,6 +94,13 @@ public class Agent extends core.player.AbstractPlayer{
     private Stack<Types.ACTIONS> plan = null;
 
     /**
+     * Controla que A* haya encontrado la solucion en el tiempo correspondiente. En caso de que no de
+     * tiempo, paramos de buscar, devolvemos ACTIONS.ACTION_NIL y seguimos iterando con los valores
+     * anteriormente calculados
+     * */
+    boolean a_star_was_succesfull = true;
+
+    /**
      * Constructor del agente.
      * Tiene que recibir esos parametros de entrada porque asi se indica en [1]
      * @param so estado del mundo, dado como una observacion
@@ -231,6 +238,7 @@ public class Agent extends core.player.AbstractPlayer{
             this.choose_objective(stateObs, elapsedTimer);
         }
 
+        // Construimos un plan en caso de que no exista uno
         if(this.plan == null || this.plan.isEmpty() == true){
             this.plan = this.a_star(stateObs, elapsedTimer);
             // No hace falta hacer this.objective == null porque solo tenemos que alcanzar el portal,
@@ -240,8 +248,45 @@ public class Agent extends core.player.AbstractPlayer{
         return this.plan.pop();
     }
 
+    /**
+     * Elige una accion en la situacion en la que estemos en el nivel 2.
+     *
+     * En este caso, hacemos A* a las gemas mas cercanas en cada momento, y al conseguir las 9 gemas
+     * calculamos el camino a la salida
+     *
+     * Los calculos solo se hacen una vez. Cuando el plan ya esta construido (no
+     * es vacio) simplemente devolvemos el siguiente elemento
+     *
+     * @param stateObs estado del mundo que nos aporta toda la informacion necesaria para la busqueda
+     * @param elapsedTimer timer para saber cuanto tiempo de computo nos queda
+     * */
     public Types.ACTIONS level2_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        return Types.ACTIONS.ACTION_UP;
+        // Seleccionamos el objetivo
+        if(this.current_objective == null){
+            this.choose_objective(stateObs, elapsedTimer);
+        }
+
+        // Construimos un plan en caso de que no exista uno
+        if(this.plan == null || this.plan.isEmpty() == true){
+
+            // Modificamos el objetivo porque con el plan anterior ya lo vamos a alcanzar
+            // Solo lo hacemos cuando A* ha tenido existo. Si no ha tenido exito, seguimos iterando
+            // sin cambiar de objetivo
+            if(this.a_star_was_succesfull == true){
+                this.choose_objective(stateObs, elapsedTimer);
+            }
+
+            this.plan = this.a_star(stateObs, elapsedTimer);
+        }
+
+        // Comprobacion extra de seguridad. No deberia ocurrir pero por si acaso añado esta comprobacion
+        // para que el programa no explote
+        if(this.plan != null || this.plan.isEmpty() == false){
+            return this.plan.pop();
+        }else{
+            System.out.println("EWWWWW");
+            return Types.ACTIONS.ACTION_NIL;
+        }
     }
 
     public Types.ACTIONS level3_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
@@ -304,8 +349,6 @@ public class Agent extends core.player.AbstractPlayer{
             // Esto no puede pasar porque deja al programa en un estado invalido
             throw new Exception("El calculo de nivel que ha hecho el agente no es valido");
         }
-
-        System.out.println("Estamos en el nivel " + this.current_level);
     }
 
     /**
@@ -476,7 +519,6 @@ public class Agent extends core.player.AbstractPlayer{
                 // Miramos si el hijo esta o no esta en abiertos
                 AStarNode already_open_node = getNodeByGridPositionAndOrientation(open, child.getPosition(), child.getOrientation());
                 boolean already_open = already_open_node != null;
-
 
                 // El hijo no ha sido explorado porque no esta en cerrados
                 // Si el hijo no esta en abiertos, logicamente lo que tenemos que hacer es añadirlo
