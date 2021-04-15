@@ -141,4 +141,25 @@ public class Orientation{
         return activated_orientations == 0 || activated_orientations == 1;
     }
 
+    @Override
+    public int hashCode(){
+        if(this.left){
+            return 1;
+        }
+
+        if(this.right){
+            return 2;
+        }
+
+        if(this.up){
+            return 3;
+        }
+
+        if(this.down){
+            return 4;
+        }
+
+        return 5;
+    }
+
 }

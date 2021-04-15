@@ -51,16 +51,24 @@ public class GridPosition{
      * Codigo basado en el dado en el tutorial de GVGAI de los profesores de practicas
      * */
     GridPosition(Vector2d position, StateObservation stateObs){
-        // Factor de escala de pixeles a grid
-        // TODO -- Sergio -- sacar el factor de escala porque es repetir calculos
-        Vector2d vector_escala = new Vector2d(
-            stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
-            stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length
-        );
+        // // Factor de escala de pixeles a grid
+        // // TODO -- Sergio -- sacar el factor de escala porque es repetir calculos
+        // Vector2d vector_escala = new Vector2d(
+        //     stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
+        //     stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length
+        // );
 
-        // Usamos el vector de escala para realizar la conversion
-        this.x = (int) Math.floor(position.x / vector_escala.x);
-        this.y = (int) Math.floor(position.y / vector_escala.y);
+        // // Usamos el vector de escala para realizar la conversion
+        // this.x = (int) Math.floor(position.x / vector_escala.x);
+        // this.y = (int) Math.floor(position.y / vector_escala.y);
+
+        // TODO -- Sergio -- borrar este codigo porque es de lucia
+        //Calculamos el factor de escala entre mundos (pixeles -> grid)
+        Vector2d fescala = new Vector2d(stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
+                stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length);
+
+        this.x = (int) Math.floor(position.x / fescala.x);
+        this.y = (int) Math.floor(position.y / fescala.y);
     }
 
     /**
@@ -70,6 +78,7 @@ public class GridPosition{
      * del mundo y con ello hacer la conversion
      *
      * Codigo basado en el dado en el tutorial de GVGAI de los profesores de practicas
+     * TODO -- Bug -- creo que aqui hay fallos
      * */
     GridPosition(int pixel_x, int pixel_y, StateObservation stateObs){
         // Factor de escala de pixeles a grid
@@ -82,7 +91,6 @@ public class GridPosition{
         // Usamos el vector de escala para realizar la conversion
         this.x = (int) Math.floor(pixel_x / vector_escala.x);
         this.y = (int) Math.floor(pixel_y / vector_escala.y);
-
     }
 
     // Getters basicos
