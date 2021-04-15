@@ -105,8 +105,6 @@ public class AStarNode{
     /**
      * Valor de la funcion de ordenacion. Es la suma del coste acumulado y el valor heuristico hasta
      * el objetivo
-     *
-     *
      * */
     public int f(){
         return this.current_cost + this.heuristic_value();
