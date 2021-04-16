@@ -126,6 +126,12 @@ public class Agent extends core.player.AbstractPlayer{
     private HeatMap wall_heat_map = null;
 
     /**
+     * Mapa de calor asociado a los enemigos. Tenemos que calcularlo en cada iteracion porque los
+     * enemigos se mueven
+     * */
+    private HeatMap enemy_heat_map = null;
+
+    /**
      * Constructor del agente.
      * Tiene que recibir esos parametros de entrada porque asi se indica en [1]
      * @param so estado del mundo, dado como una observacion
@@ -341,14 +347,31 @@ public class Agent extends core.player.AbstractPlayer{
      * Acciones a realizar con el nivel reactivo con un solo enemigo
      * */
     public Types.ACTIONS level3_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        System.out.println("El heat map de las paredes es: " + this.wall_heat_map);
+        // Calculamos el mapa de calor asociado a los enemigos
+        this.calculate_enemy_heat_map(stateObs);
         return Types.ACTIONS.ACTION_UP;
     }
+
     public Types.ACTIONS level4_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        return Types.ACTIONS.ACTION_UP;
+        return this.level3_act(stateObs, elapsedTimer);
     }
     public Types.ACTIONS level5_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         return Types.ACTIONS.ACTION_UP;
+    }
+
+    /**
+     * Calcula el mapa de calor asociado a los enemeigos presentes
+     * */
+    void calculate_enemy_heat_map(StateObservation stateObs){
+        // Tomamos las posiciones en el grid de los enemigos
+        ArrayList<GridPosition> enemies_pos = new ArrayList<GridPosition>();
+        for(Observation enemy: stateObs.getNPCPositions()[0]){
+            GridPosition enemi_grid_pos = new GridPosition(enemy.position, this.scale_factor);
+            enemies_pos.add(enemi_grid_pos);
+        }
+
+        // Calculamos el mapa de calor
+        this.enemy_heat_map = new HeatMap(enemies_pos, this.vision_radius, this.world_dimensions_grid);
     }
 
     /**
