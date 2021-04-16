@@ -124,7 +124,7 @@ public class Agent extends core.player.AbstractPlayer{
      * Radio de accion del jugador. A la hora de buscar la zona a la que escapar, lejania de las
      * casillas a las que nos queremos mover
      * */
-    private int action_radius = 3;
+    private int action_radius = 4;
 
     /**
      * Mapa de calor asociado a los muros, que precalculamos

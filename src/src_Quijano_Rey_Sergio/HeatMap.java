@@ -20,7 +20,7 @@ public class HeatMap{
      * Los enemigos son mas prioritarios que los muros. Por eso este factor de escala que debiera ser
      * mayor o igual que uno
      * */
-    private double enemy_scale_factor = 1000.0;
+    private double enemy_scale_factor = 600.0;
 
     // Valores del calor
     private double[][] heat_map;
