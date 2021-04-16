@@ -208,4 +208,46 @@ public class GridPosition{
         return true;
     }
 
+    /**
+     * Toma los GridPosition dentro del mapa que estan a un radio dado
+     * @param vision_radius radio de vision para devolver elementos
+     * @pre vision_radius >= 0
+     * @param world_dimensions para saber si una posicion esta dentro del mapa o no
+     * */
+    public ArrayList<GridPosition> get_surroundings(int vision_radius, GridPosition world_dimensions){
+        ArrayList<GridPosition> surroundings = new ArrayList<GridPosition>();
+
+        for(int row_delta = -vision_radius; row_delta <= vision_radius; row_delta++){
+            for(int col_delta = -vision_radius; col_delta <= vision_radius; col_delta++){
+
+                // Generamos la nueva posicion y comprobamos que este dentro del mapa
+                GridPosition new_pos = new GridPosition(this.x + col_delta, this.y + row_delta);
+                if(new_pos.isInsideMap(world_dimensions) == false){
+                    continue;
+                }
+
+                // Añadimos la posicion al conjunto que devolvemos
+                surroundings.add(new_pos);
+            }
+        }
+
+        return surroundings;
+    }
+
+    /**
+     * Comprueba si este GridPosition esta dentro de los confines del mapa.
+     * @param world_dimensions dimensiones del mapa para comprobar si estamos dentro o no
+     * */
+    public boolean isInsideMap(GridPosition world_dimensions){
+        if(this.x < 0 || this.y < 0){
+            return false;
+        }
+
+        if(this.x >= world_dimensions.x || this.y >= world_dimensions.y){
+            return false;
+        }
+
+        return true;
+    }
+
 }

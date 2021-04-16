@@ -99,18 +99,31 @@ public class Agent extends core.player.AbstractPlayer{
      * tiempo, paramos de buscar, devolvemos ACTIONS.ACTION_NIL y seguimos iterando con los valores
      * anteriormente calculados
      * */
-    boolean a_star_was_succesfull = true;
+    private boolean a_star_was_succesfull = true;
 
     /**
      * Tiempo tope para dejar de buscar y guardar el estado
      * */
-    int millis_threshold = 1;
+    private int millis_threshold = 1;
 
     /**
      * Si no tenemos tiempo, guardamos el conjunto de abiertos y cerrados para que en la siguiente
      * vez sigamos iterando
      * */
-    BufferContent buffer = null;
+    private BufferContent buffer = null;
+
+
+    /**
+     * Radio de vision del jugador. Esto influye para tomar los elementos en una posicion que suman
+     * en los valores del mapa del calor. Por ejemplo, si hay un enemigo mas alla del vision_radius,
+     * no consideramos su presencia en el mapa de calor
+     * */
+    private int vision_radius = 5;
+
+    /**
+     * Mapa de calor asociado a los muros, que precalculamos
+     * */
+    private HeatMap wall_heat_map = null;
 
     /**
      * Constructor del agente.
@@ -144,10 +157,40 @@ public class Agent extends core.player.AbstractPlayer{
         // Calculamos las posiciones inamovibles (muros)
         this.calculate_inamovable_positions(so);
 
+        // Si tenemos enemigos, calculamos el mapa de calor
+        if(this.current_level >= 3){
+            this.precalculate_walls_heat_map();
+        }
+
         // Aprovechamos para calcular el camino porque tenemos mucho tiempo de computo
-        this.choose_objective(so, elapsedTimer);
-        this.a_star(so, elapsedTimer);
+        // En el caso en el que estemos en los dos primeros niveles
+        if(this.current_level == 1 || this.current_level == 2){
+            this.choose_objective(so, elapsedTimer);
+            this.a_star(so, elapsedTimer);
+        }
     }
+
+    /**
+     * Funcion que nos aporta un segundo extra de computo al inicio del juego.
+     * TODO -- Sergio -- No se esta invocando esta funcion
+     * */
+    public void init(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
+        // Podemos dejar precalculado el mapa de calor asociado a los muros
+        this.precalculate_walls_heat_map();
+    }
+
+    /**
+     * Precalcula el mapa de calor asociado a los muros.
+     * Como los muros no son un componente dinamico, podemos calcular una unica vez el valor de
+     * calor de cada celda asociado a los muros
+     * */
+    public void precalculate_walls_heat_map(){
+        // Por si algun error intento calcular mas de una vez el mapa de calor
+        if(this.wall_heat_map == null){
+            this.wall_heat_map = new HeatMap(this.inmovable_grid_positions, this.vision_radius, this.world_dimensions_grid);
+        }
+    }
+
 
     /**
      * Calculamos el conjunto de GridPosition que son posiciones muro
@@ -294,7 +337,11 @@ public class Agent extends core.player.AbstractPlayer{
         return this.plan.pop();
     }
 
+    /**
+     * Acciones a realizar con el nivel reactivo con un solo enemigo
+     * */
     public Types.ACTIONS level3_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        System.out.println("El heat map de las paredes es: " + this.wall_heat_map);
         return Types.ACTIONS.ACTION_UP;
     }
     public Types.ACTIONS level4_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
