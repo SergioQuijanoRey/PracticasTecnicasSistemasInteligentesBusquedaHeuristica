@@ -118,7 +118,13 @@ public class Agent extends core.player.AbstractPlayer{
      * en los valores del mapa del calor. Por ejemplo, si hay un enemigo mas alla del vision_radius,
      * no consideramos su presencia en el mapa de calor
      * */
-    private int vision_radius = 5;
+    private int vision_radius = 15;
+
+    /**
+     * Radio de accion del jugador. A la hora de buscar la zona a la que escapar, lejania de las
+     * casillas a las que nos queremos mover
+     * */
+    private int action_radius = 3;
 
     /**
      * Mapa de calor asociado a los muros, que precalculamos
@@ -347,9 +353,70 @@ public class Agent extends core.player.AbstractPlayer{
      * Acciones a realizar con el nivel reactivo con un solo enemigo
      * */
     public Types.ACTIONS level3_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        if(this.plan != null && this.plan.isEmpty() == false){
+            return this.plan.pop();
+        }
+
         // Calculamos el mapa de calor asociado a los enemigos
         this.calculate_enemy_heat_map(stateObs);
+
+        // Posicion a la que nos queremos mover
+        GridPosition lowest_heat_pos = this.calculate_lowest_heat_pos(stateObs);
+
+        // Todas las posiciones tienen calor cero, no hacemos nada
+        if(lowest_heat_pos == null){
+            return Types.ACTIONS.ACTION_NIL;
+        }
+
+        // Hacemos A* para ir al punto de menor calor
+        this.current_objective = lowest_heat_pos.toVector2d(this.scale_factor);
+        this.plan = this.a_star(stateObs, elapsedTimer);
+        this.plan.pop();
+
+
+
         return Types.ACTIONS.ACTION_UP;
+    }
+
+    /**
+     * Calcula el punto del mapa con menor calor en el radio de accion respecto la posicion del
+     * jugador. Para decidir a que posicion debe moverse el avatar
+     * @param stateObs para consultar la posicion del jugador
+     * */
+    GridPosition calculate_lowest_heat_pos(StateObservation stateObs){
+        GridPosition player_pos = new GridPosition(stateObs.getAvatarPosition(), this.scale_factor);
+        GridPosition lowest_heat_pos = null;
+
+        for(GridPosition curr_pos: player_pos.get_surroundings(this.action_radius, this.world_dimensions_grid)){
+            // Tomamos el valor de menor calor
+            if(lowest_heat_pos == null || this.heat(curr_pos) < this.heat(lowest_heat_pos)){
+                lowest_heat_pos = curr_pos;
+            }
+        }
+
+        // Lo mejor en esta situacion es no movernos
+        if(this.heat(player_pos) <= this.heat(lowest_heat_pos)){
+            return null;
+        }
+
+        return lowest_heat_pos;
+    }
+
+    /**
+     * Calcula el calor de una posicion dada. Combina el calor de los muros y el calor de los enemigos
+     * @param pos la posicion cuyo calor calculamos
+     * */
+    double heat(GridPosition pos){
+        double heat = 0.0;
+
+        // Añadimos el calor de los muros
+        heat += this.wall_heat_map.getHeat(pos);
+
+        // Añadimos el calor de los enemigos
+        heat += this.enemy_heat_map.getHeat(pos);
+
+        return heat;
+
     }
 
     public Types.ACTIONS level4_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){

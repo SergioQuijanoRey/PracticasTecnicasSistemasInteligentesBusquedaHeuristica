@@ -20,7 +20,7 @@ public class HeatMap{
      * Los enemigos son mas prioritarios que los muros. Por eso este factor de escala que debiera ser
      * mayor o igual que uno
      * */
-    private double enemy_scale_factor = 2.0;
+    private double enemy_scale_factor = 1000.0;
 
     // Valores del calor
     private double[][] heat_map;
@@ -110,7 +110,14 @@ public class HeatMap{
         }
 
         return result;
+    }
 
+    /**
+     * Devuelve el calor de una posicion dada
+     * @param pos la posicion cuyo calor devolvemos
+     * */
+    double getHeat(GridPosition pos){
+        return this.heat_map[pos.getY()][pos.getX()];
     }
 }
 

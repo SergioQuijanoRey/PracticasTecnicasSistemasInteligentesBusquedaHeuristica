@@ -250,4 +250,12 @@ public class GridPosition{
         return true;
     }
 
+    /**
+     * Devuelve el Vector2d original asociado a esta GridPosition
+     * @param scale_factor el factor de escala necesario para la reconversion
+     * */
+    public Vector2d toVector2d(Vector2d scale_factor){
+        return new Vector2d(this.x * scale_factor.x, this.y * scale_factor.y);
+    }
+
 }
