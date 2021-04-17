@@ -127,6 +127,13 @@ public class Agent extends core.player.AbstractPlayer{
     private int action_radius = 4;
 
     /**
+     * Radio de seguridad del jugador. Para el nivel compuesto deliberativo - reactivo. Determina
+     * cuando tenemos que pasar a comportamiento reactivo al estar en peligro por la presencia de un
+     * enemigo cercano
+     * */
+    private int safety_radius = 4;
+
+    /**
      * Mapa de calor asociado a los muros, que precalculamos
      * */
     private HeatMap wall_heat_map = null;
@@ -176,7 +183,8 @@ public class Agent extends core.player.AbstractPlayer{
 
         // Aprovechamos para calcular el camino porque tenemos mucho tiempo de computo
         // En el caso en el que estemos en los dos primeros niveles
-        if(this.current_level == 1 || this.current_level == 2){
+        // En el ultimo nivel, tambien tenemos que realizar A* para ir a por las gemas
+        if(this.current_level == 1 || this.current_level == 2 || this.current_level == 5){
             this.choose_objective(so, elapsedTimer);
             this.a_star(so, elapsedTimer);
         }
@@ -350,7 +358,15 @@ public class Agent extends core.player.AbstractPlayer{
     }
 
     /**
-     * Acciones a realizar con el nivel reactivo con un solo enemigo
+     * Elige una accion en la situacion en la que estemos en el nivel 3.
+     *
+     * En este caso, estamos en presencia de un enemigo del que tenemos que huir durante todos los
+     * ticks que dura una partida de GVGAI
+     *
+     * @param stateObs estado del mundo que nos aporta toda la informacion necesaria sobre el mundo
+     * y las posiciones de los enemigos
+     * @param elapsedTimer timer para saber cuanto tiempo de computo nos queda. En estos niveles no
+     * va a ser muy util porque el comportamiento reactivo es muy sencillo de ejecutar
      * */
     public Types.ACTIONS level3_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         if(this.plan != null && this.plan.isEmpty() == false){
@@ -419,11 +435,60 @@ public class Agent extends core.player.AbstractPlayer{
 
     }
 
+    /**
+     * Usamos el mismo comportamiento que cuando estamos en presencia de un unico enemigo. El nivel
+     * 3 ya esta programado para considerar uno o dos enemigos, asi que no hay que hacer cambios para
+     * que funcione con mas de un enemigo
+     * */
     public Types.ACTIONS level4_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         return this.level3_act(stateObs, elapsedTimer);
     }
+
+    /**
+     *
+     * */
     public Types.ACTIONS level5_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
-        return Types.ACTIONS.ACTION_UP;
+        // Comprobamos si estamos en peligro
+        if(this.areWeInDanger(stateObs)){
+            // Estamos escapando de un enemigo, asi que borramos el objetivo actual porque este puede
+            // haber cambiado. Tambien borramos el plan, porque si no el reactivo usa lo que hayamos
+            // guardado en el stack
+            this.current_objective = null;
+            this.plan = null;
+
+            // Usamos el comportamiento reactivo para escapar
+            return this.level3_act(stateObs, elapsedTimer);
+        }
+
+        // No estamos en peligro, asi que empleamos el comportamiento deliberativo
+        return this.level2_act(stateObs, elapsedTimer);
+    }
+
+    /**
+     * Comprueba, para el nivel compuesto, si estamos en peligro. Cuando estamos en peligro, pasamos
+     * de un comortamiento deliberativo a un comportamiento reactivo
+     * @param stateObs estado del mundo que nos da la informacion sobre las posiciones de los enemigos
+     * @return false, si estamos en una situacion segura
+     *         true, si estamos en una situacion peligrosa
+     * */
+    public boolean areWeInDanger(StateObservation stateObs){
+        // Tomamos las posiciones de los enemigos
+        ArrayList<GridPosition> enemies_pos = this.getEnemiesPosition(stateObs);
+
+        // Tomamos la posicion del jugador
+        GridPosition player_pos = this.getPlayerPosition(stateObs);
+
+        for(GridPosition enemy_pos: enemies_pos){
+            if(GridPosition.manhattan_distance(player_pos, enemy_pos) <= this.safety_radius){
+                // Estamos demasiado cerca de un enemigo, activamos el comportamiento reactivo
+                return true;
+            }
+        }
+
+
+        // No hay ningun enemigo cercano, estamos seguros
+        return false;
+
     }
 
     /**
@@ -431,14 +496,34 @@ public class Agent extends core.player.AbstractPlayer{
      * */
     void calculate_enemy_heat_map(StateObservation stateObs){
         // Tomamos las posiciones en el grid de los enemigos
+        ArrayList<GridPosition> enemies_pos = this.getEnemiesPosition(stateObs);
+
+        // Calculamos el mapa de calor
+        this.enemy_heat_map = new HeatMap(enemies_pos, this.vision_radius, this.world_dimensions_grid);
+    }
+
+    /**
+     * Calculamos las posiciones de los enemigos en formato GridPosition
+     * @param stateObs estado del mundo que nos proporciona la informacion necesaria
+     * */
+    ArrayList<GridPosition> getEnemiesPosition(StateObservation stateObs){
         ArrayList<GridPosition> enemies_pos = new ArrayList<GridPosition>();
         for(Observation enemy: stateObs.getNPCPositions()[0]){
             GridPosition enemi_grid_pos = new GridPosition(enemy.position, this.scale_factor);
             enemies_pos.add(enemi_grid_pos);
         }
 
-        // Calculamos el mapa de calor
-        this.enemy_heat_map = new HeatMap(enemies_pos, this.vision_radius, this.world_dimensions_grid);
+        return enemies_pos;
+    }
+
+    /**
+     * Calculamos la posicion del jugador
+     * @param stateObs informacion del mundo que nos da la posicion del jugador
+     * */
+    GridPosition getPlayerPosition(StateObservation stateObs){
+        Vector2d player_position = stateObs.getAvatarPosition();
+        GridPosition player_grid_position = new GridPosition(player_position, this.scale_factor);
+        return player_grid_position;
     }
 
     /**
@@ -498,12 +583,13 @@ public class Agent extends core.player.AbstractPlayer{
      * Cuando no tenemos suficientes gemas, elige como objetivo la gema mas cercana
      * Cuando tenemos todas las gemas (o cuando no hay gemas en el mapa), elige
      * el portal mas cercano al jugador
-     *
-     * TODO -- Sergio -- Queda por implementar para otros niveles
      * */
     void choose_objective(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
+        // En el primer nivel solo nos interesa ir al portal
         if(this.current_level == 1){
             this.choose_objective_as_closest_portal(stateObs, elapsedTimer);
+
+        // En los niveles 2, 3 y 5, primero vamos a por las gemas y despues salimos por el portal
         }else if(this.current_level >= 2){
 
             // Tenemos todas las gemas, tenemos que ir al portal
