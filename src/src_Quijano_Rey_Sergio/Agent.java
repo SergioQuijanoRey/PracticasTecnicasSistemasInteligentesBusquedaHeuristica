@@ -406,7 +406,7 @@ public class Agent extends core.player.AbstractPlayer{
      * @param stateObs para consultar la posicion del jugador
      * */
     GridPosition calculate_lowest_heat_pos(StateObservation stateObs){
-        GridPosition player_pos = new GridPosition(stateObs.getAvatarPosition(), this.scale_factor);
+        GridPosition player_pos = this.getPlayerPosition(stateObs);
         GridPosition lowest_heat_pos = null;
 
         for(GridPosition curr_pos: player_pos.get_surroundings(this.action_radius, this.world_dimensions_grid)){
@@ -416,7 +416,8 @@ public class Agent extends core.player.AbstractPlayer{
             }
         }
 
-        // Lo mejor en esta situacion es no movernos
+        // Lo mejor en esta situacion es movernos a la posicion de menor calor por unicamente
+        // enemigos
         if(this.enemy_heat_map.getHeat(player_pos) <= this.enemy_heat_map.getHeat(lowest_heat_pos)){
             return null;
         }
