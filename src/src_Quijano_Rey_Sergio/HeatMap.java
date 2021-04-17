@@ -20,7 +20,7 @@ public class HeatMap{
      * Los enemigos son mas prioritarios que los muros. Por eso este factor de escala que debiera ser
      * mayor o igual que uno
      * */
-    private double enemy_scale_factor = 600.0;
+    private double enemy_scale_factor = 100.0;
 
     // Valores del calor
     private double[][] heat_map;
@@ -28,17 +28,17 @@ public class HeatMap{
     /***
      * Constructor del mapa de calor asociado a los muros del mapa.
      * @param walls el hash set con los muros
-     * @param vision_radius radio de vision
+     * @param wall_radius radio de efecto de los muros
      * @param world_dimensions dimensiones del mundo, para saber si nos salimos del mundo
      * */
-    HeatMap(HashSet<GridPosition> walls, int vision_radius, GridPosition world_dimensions){
+    HeatMap(HashSet<GridPosition> walls, int wall_radius, GridPosition world_dimensions){
         // Inicializamos la matriz de valores double
         this.heat_map = new double[world_dimensions.getY()][world_dimensions.getX()];
 
         // Iteramos sobre los muros, en vez de sobre posiciones del grid, porque asi es mas rapido
         for(GridPosition current_wall: walls){
             // Tomamos las posiciones que se ven en el radio dado desde el muro actual
-            for(GridPosition current_element: current_wall.get_surroundings(vision_radius, world_dimensions)){
+            for(GridPosition current_element: current_wall.get_surroundings(wall_radius, world_dimensions)){
                 this.heat_map[current_element.getY()][current_element.getX()] += this.heat_by_distance(current_wall, current_element, this.wall_type);
             }
         }

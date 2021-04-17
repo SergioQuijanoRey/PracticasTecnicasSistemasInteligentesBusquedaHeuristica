@@ -121,6 +121,12 @@ public class Agent extends core.player.AbstractPlayer{
     private int vision_radius = 15;
 
     /**
+     * Radio de efecto de un muro. Esto influye a la hora de que un muro sume o no calor a una casilla
+     * que este mas cerca o mas lejos que esta distancia
+     * */
+    private int wall_radius = 5;
+
+    /**
      * Radio de accion del jugador. A la hora de buscar la zona a la que escapar, lejania de las
      * casillas a las que nos queremos mover
      * */
@@ -207,7 +213,7 @@ public class Agent extends core.player.AbstractPlayer{
     public void precalculate_walls_heat_map(){
         // Por si algun error intento calcular mas de una vez el mapa de calor
         if(this.wall_heat_map == null){
-            this.wall_heat_map = new HeatMap(this.inmovable_grid_positions, this.vision_radius, this.world_dimensions_grid);
+            this.wall_heat_map = new HeatMap(this.inmovable_grid_positions, this.wall_radius, this.world_dimensions_grid);
         }
     }
 
@@ -411,7 +417,7 @@ public class Agent extends core.player.AbstractPlayer{
         }
 
         // Lo mejor en esta situacion es no movernos
-        if(this.heat(player_pos) <= this.heat(lowest_heat_pos)){
+        if(this.enemy_heat_map.getHeat(player_pos) <= this.enemy_heat_map.getHeat(lowest_heat_pos)){
             return null;
         }
 
