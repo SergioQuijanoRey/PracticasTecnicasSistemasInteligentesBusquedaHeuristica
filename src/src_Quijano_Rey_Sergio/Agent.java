@@ -418,7 +418,7 @@ public class Agent extends core.player.AbstractPlayer{
 
         // Lo mejor en esta situacion es movernos a la posicion de menor calor por unicamente
         // enemigos
-        if(this.enemy_heat_map.getHeat(player_pos) <= this.enemy_heat_map.getHeat(lowest_heat_pos)){
+        if(this.heat(player_pos) <= this.heat(lowest_heat_pos)){
             return null;
         }
 
@@ -468,6 +468,9 @@ public class Agent extends core.player.AbstractPlayer{
         }
 
         // No estamos en peligro, asi que empleamos el comportamiento deliberativo
+        // Notar que pueden quedar acciones en this.plan de la parte reactiva, por lo que se siguen
+        // ejecutando. Cuando cambio el codigo para que esto no pase, el comportamiento obtenido es
+        // peor, así que dejo este "problema" intencionalmente al aportar mejores resultados
         return this.level2_act(stateObs, elapsedTimer);
     }
 
