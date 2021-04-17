@@ -20,9 +20,6 @@ import tools.Vector2d;
 
 import ontology.Types;
 
-// Para generar numeros aleatorios
-import java.util.Random;
-
 // Tipos de datos de java
 import java.util.ArrayList;
 import java.util.HashMap;
