@@ -294,9 +294,8 @@ public class Agent extends core.player.AbstractPlayer{
             case 5:
                 return this.level5_act(stateObs, elapsedTimer);
             default:
-                // TODO -- Sergio -- no mostrar mensajes por pantalla
-                System.err.println("[Err] El valor actual de nivel no es valido");
-                System.err.println("Devolvemos accion nula");
+                // El nivel no es valido, devolvemos una accion nula para que el programa java
+                // no de un crash
                 return Types.ACTIONS.ACTION_NIL;
         }
     }
@@ -386,6 +385,8 @@ public class Agent extends core.player.AbstractPlayer{
         GridPosition lowest_heat_pos = this.calculate_lowest_heat_pos(stateObs);
 
         // Todas las posiciones tienen calor cero, no hacemos nada
+        // O todas las posiciones tienen un calor mayor que la posicion actual, por lo que tampoco
+        // hacemos nada en ese caso
         if(lowest_heat_pos == null){
             return Types.ACTIONS.ACTION_NIL;
         }
@@ -394,8 +395,6 @@ public class Agent extends core.player.AbstractPlayer{
         this.current_objective = lowest_heat_pos.toVector2d(this.scale_factor);
         this.plan = this.a_star(stateObs, elapsedTimer);
         this.plan.pop();
-
-
 
         return Types.ACTIONS.ACTION_UP;
     }
@@ -452,7 +451,18 @@ public class Agent extends core.player.AbstractPlayer{
     }
 
     /**
+     * Elige una accion en la situacion en la que estemos en el nivel 5.
      *
+     * Tenemos que recoger nueve gemas y escapar por el portal, en presencia de enemigos
+     * Cuando no hay enemigos cercanos, se aplica el comportamiento del nivel 2 (greedy para gemas,
+     * A* para ir hasta las gemas). Cuando hay enemigos cercanos, empleamos el comportamiento del
+     * nivel 3 (reactivo yendo hacia zonas de menor calor)
+     *
+     * @param stateObs estado del mundo que nos aporta toda la informacion necesaria sobre el mundo
+     * y las posiciones de los enemigos
+     * @param elapsedTimer timer para saber cuanto tiempo de computo nos queda. En este caso si va a
+     * ser útil al estar lanzando A*, aunque lanzamos A* a una GridPosition de a lo sumo 4 casillas
+     * de distancia
      * */
     public Types.ACTIONS level5_act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         // Comprobamos si estamos en peligro
@@ -642,7 +652,7 @@ public class Agent extends core.player.AbstractPlayer{
     }
 
     /**
-     * Establece la gema mas cercano al jugador como objetivo actual.
+     * Establece la gema mas cercana al jugador como objetivo actual.
      * Cuidado con la cercania, porque GVGAI devuelve un array con las gemas ordenadas por distancia,
      * pero usando la distancia euclidea. Asi que hay que hacer las comprobaciones de las distancias
      * a mano computando la distancia manhattan
@@ -691,7 +701,9 @@ public class Agent extends core.player.AbstractPlayer{
      * es mucho mas facil generar el camino sin tener que invertir un ArrayList (que llevaba mucho
      * mas tiempo)
      *
-     * TODO -- comprobar los tiempos y parar cuando quede poco tiempo de computo
+     * Puede tardar mas de una llamada de act en calcular. Cuando estamos a cierto tiempo de agotar
+     * la iteracion, devolvemos ACTIONS.ACTION_NIL y guardamos el proceso de la busqueda hasta el
+     * momento
      * */
     Stack<Types.ACTIONS> a_star(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         // No tenemos objetivo, hay que elegir uno
@@ -724,8 +736,9 @@ public class Agent extends core.player.AbstractPlayer{
             closed = this.buffer.getClosed();
         }
 
-        // TODO -- Sergio -- meter esto dentro del while para que sea mas idiomatico
-        // TODO -- Sergio -- Hace que se parezca demasiado al codigo de lucia
+        // Nodo actual de las iteraciones
+        // Lo dejamos fuera del while para poder reconstruir el camino de acciones al acabar de
+        // iterar en el bucle while
         AStarNode current = null;
 
         // Iteramos en la busqueda
@@ -741,7 +754,6 @@ public class Agent extends core.player.AbstractPlayer{
             // Comprobacion de tiempos. Lo hago fuera del bucle de los hijos tambien porque el proceso
             // de generar los hijos puede considerarse muy lento
             if(this.can_we_continue(elapsedTimer) == false){
-                System.out.println("GUARDANDO CONTENIDOS EN EL BUFFER");
                 this.a_star_was_succesfull = false;
                 this.save_progress(open, closed);
                 return construct_nil_path();
@@ -753,7 +765,6 @@ public class Agent extends core.player.AbstractPlayer{
 
                 // Comprobacion de tiempos
                 if(this.can_we_continue(elapsedTimer) == false){
-                    System.out.println("GUARDANDO CONTENIDOS EN EL BUFFER");
                     this.a_star_was_succesfull = false;
                     this.save_progress(open, closed);
                     return construct_nil_path();
@@ -765,19 +776,32 @@ public class Agent extends core.player.AbstractPlayer{
                     continue;
                 }
 
-                // Si el nodo hijo ya ha sido explorado, y por tanto esta en cerrados
-                if(closed.contains(child)){
-                    // Tomamos el nodo que ya estaba en cerrados
-                    int already_explored_node_index = closed.indexOf(child);
-                    AStarNode already_explored_node = closed.get(already_explored_node_index);
+                // IMPORTANTE -- La heuristica es admisible, por tanto, no es necesario mantener
+                // la estructura de datos de cerrados. Una vez que un nodo entra en cerrados, al
+                // ser admisible h, entra con el camino optimo hasta ese punto
+                // IMPORTANTE -- Ademas, este mantenimiento es costoso, lo que hacia que necesitase
+                // mas de una llamada a this.act para terminar A* (y teniendo un tick mas del coste
+                // optimo). Con este cambio, esta situacion nunca ocurre
+                // Aun asi, tenemos que comprobar que no tengamos el nodo en cerrado, y al terminar
+                // añadirlo (lo que hacemos es que cuando metemos un nodo en cerrados, no lo volvemos
+                // a sacar)
 
-                    // Comprobamos cual de los dos nodos tiene mejor g
-                    // Si el nodo hijo tiene menor coste, quitamos el nodo de cerrados y lo metemos
-                    // en abiertos para que sea explorado mas tarde
-                    if(child.getCost() < already_explored_node.getCost()){
-                        closed.remove(already_explored_node_index);
-                        open.add(child);
-                    }
+                // Si el nodo hijo ya ha sido explorado, y por tanto esta en cerrados
+                //if(closed.contains(child)){
+                //    // Tomamos el nodo que ya estaba en cerrados
+                //    int already_explored_node_index = closed.indexOf(child);
+                //    AStarNode already_explored_node = closed.get(already_explored_node_index);
+
+                //    // Comprobamos cual de los dos nodos tiene mejor g
+                //    // Si el nodo hijo tiene menor coste, quitamos el nodo de cerrados y lo metemos
+                //    // en abiertos para que sea explorado mas tarde
+                //    if(child.getCost() < already_explored_node.getCost()){
+                //        closed.remove(already_explored_node_index);
+                //        open.add(child);
+                //    }
+                //    continue;
+                //}
+                if(closed.contains(child)){
                     continue;
                 }
 
