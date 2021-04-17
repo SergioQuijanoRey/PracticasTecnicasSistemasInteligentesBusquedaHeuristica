@@ -195,6 +195,7 @@ public class AStarNode{
 
     /**
      * Devuelve las acciones para llegar desde el padre hasta el hijo.
+     * Devuelve una o dos acciones repetidas segun necesitemos hacer un cambio de orientacion o no
      * */
     public ArrayList<Types.ACTIONS> getActions(){
         ArrayList<Types.ACTIONS> actions = new ArrayList<Types.ACTIONS>();

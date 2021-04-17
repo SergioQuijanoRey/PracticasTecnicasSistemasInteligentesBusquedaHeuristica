@@ -257,5 +257,4 @@ public class GridPosition{
     public Vector2d toVector2d(Vector2d scale_factor){
         return new Vector2d(this.x * scale_factor.x, this.y * scale_factor.y);
     }
-
 }
