@@ -153,7 +153,6 @@ public class AStarNode{
             // Generamos la nueva posicion y comprobamos que sea valido
             GridPosition new_position = new GridPosition(this.position.getX() + x_delta, this.position.getY() + y_delta);
             if(new_position.isValidToMove(world_dimensions_grid, inmovable_grid_positions) == false){
-                // TODO -- Sergio -- no mostrar mensajes por pantalla
                 continue;
             }
 

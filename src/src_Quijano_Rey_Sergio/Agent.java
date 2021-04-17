@@ -166,8 +166,7 @@ public class Agent extends core.player.AbstractPlayer{
             // nos encontramos
             this.set_level(so, elapsedTimer);
         } catch (Exception ex) {
-            // TODO -- Sergio -- mirar como hacer esto mejor
-            // Cuando hay una excepcion porque no se ha hecho bien el calculo,
+            // Cuando hay una excepcion porque no se ha hecho bien el calculo (como hemos programado),
             // empleamos la planificacion mas avanzada que tenemos
             this.current_level = 5;
         }
@@ -194,15 +193,6 @@ public class Agent extends core.player.AbstractPlayer{
             this.choose_objective(so, elapsedTimer);
             this.a_star(so, elapsedTimer);
         }
-    }
-
-    /**
-     * Funcion que nos aporta un segundo extra de computo al inicio del juego.
-     * TODO -- Sergio -- No se esta invocando esta funcion
-     * */
-    public void init(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
-        // Podemos dejar precalculado el mapa de calor asociado a los muros
-        this.precalculate_walls_heat_map();
     }
 
     /**
@@ -703,7 +693,8 @@ public class Agent extends core.player.AbstractPlayer{
      *
      * Puede tardar mas de una llamada de act en calcular. Cuando estamos a cierto tiempo de agotar
      * la iteracion, devolvemos ACTIONS.ACTION_NIL y guardamos el proceso de la busqueda hasta el
-     * momento
+     * momento. Cuando A* tarda mas ticks de lo debido, estoy seguro de que este problema con los
+     * tiempos es el causante.
      * */
     Stack<Types.ACTIONS> a_star(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
         // No tenemos objetivo, hay que elegir uno
@@ -806,7 +797,7 @@ public class Agent extends core.player.AbstractPlayer{
                 }
 
                 // Miramos si el hijo esta o no esta en abiertos
-                AStarNode already_open_node = getNodeByGridPositionAndOrientation(open, child.getPosition(), child.getOrientation());
+                AStarNode already_open_node = AuxiliarFunctions.getNodeByGridPositionAndOrientation(open, child.getPosition(), child.getOrientation());
                 boolean already_open = already_open_node != null;
 
                 // El hijo no ha sido explorado porque no esta en cerrados
@@ -865,31 +856,6 @@ public class Agent extends core.player.AbstractPlayer{
         }
 
         return path;
-    }
-
-    /**
-     * Funcion auxiliar para encontrar el nodo que representa una determinada
-     * posicion y orientacion
-     *
-     * @param node_set conjunto de nodos en un conjunto iterable, representan
-     * nodos cerrados o nodos abiertos
-     * @param position posicion con la que hacemos las comprobaciones
-     * @pre debe comprobarse previamente que exista el nodo buscado. En otro caso
-     * se devuelve null
-     * @return el AStarNode cuya posicion es position y orientacion es orientation
-     *
-     * TODO -- Sergio -- mover a funciones auxiliares
-     * */
-    AStarNode getNodeByGridPositionAndOrientation(Iterable<AStarNode> node_set, GridPosition position, Orientation orientation){
-        for(AStarNode current_node : node_set){
-            if(current_node.getPosition().equals(position) && current_node.getOrientation().equals(orientation)){
-                return current_node;
-            }
-        }
-
-        // No se ha encontrado el nodo, se devuelve null
-        // Esto no deberia pasar por las precondiciones
-        return null;
     }
 
     /**

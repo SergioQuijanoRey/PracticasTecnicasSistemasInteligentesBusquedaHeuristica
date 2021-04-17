@@ -12,7 +12,6 @@ import core.game.Observation;
  * */
 public class HeatMap{
     // Tipos de elementos que proporcionan calor
-    // TODO -- deberia ser un enumerado
     private int wall_type = 1;
     private int enemy_type = 2;
 
